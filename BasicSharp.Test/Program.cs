@@ -1,27 +1,27 @@
 ﻿using System;
 using System.IO;
-
-namespace BasicSharp.Test
-{
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            foreach (string file in Directory.GetFiles(Environment.CurrentDirectory, "*.bas"))
-            {
-                Interpreter basic = new Interpreter(File.ReadAllText(file));
-                try
-                {
+using System.Windows.Forms;
+namespace BasicSharp.Test {
+    class Program {
+        [STAThread]  // needed for the file open dialog.
+        static void Main(string[] args) {
+            OpenFileDialog fDialog = new OpenFileDialog();
+            string fileName = "";
+            if (fDialog.ShowDialog() == DialogResult.OK) {
+                fileName = fDialog.FileName;
+                Interpreter basic = new Interpreter(File.ReadAllText(fileName));
+                try {
+                    Console.WriteLine("BasicSharp Intepreter Start.");
+                    Console.WriteLine("----------------------------\n");
                     basic.Exec();
+                    Console.WriteLine("No errors during run.");
+                } catch (Exception e) {
+                    Console.WriteLine("Runtime Error detected - aborting.");
+                    Console.WriteLine("Exception was " + e.Message);
                 }
-                catch (Exception e)
-                {
-                    Console.WriteLine("BAD");
-                    Console.WriteLine(e.Message);
-                    continue;
-                }
-                Console.WriteLine("OK");
             }
+          
+            Console.WriteLine("Run complete, press [ENTER] to exit.");
             Console.Read();
         }
     }

@@ -3,7 +3,7 @@ namespace BasicSharp
 {
     public enum Token
     {
-        Unkown,
+        Unknown,
 
         Identifer,
         Value,

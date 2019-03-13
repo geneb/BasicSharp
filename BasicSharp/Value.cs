@@ -83,7 +83,7 @@ namespace BasicSharp
             else
             {
                 if (a.Type == ValueType.String)
-                    throw new Exception("Cannot do binop on strings(except +).");
+                    throw new Exception("Cannot do binop on strings(except +).");  //TODO Needs more detail.
 
                 switch (tok)
                 {
@@ -97,7 +97,7 @@ namespace BasicSharp
                     case Token.MoreEqual: return new Value(a.Real >= b.Real ? 1 : 0);
                 }
             }
-            throw new Exception("Unkown binop");
+            throw new Exception("Unknown binop");  //TODO this could be more clear.
         }
 
         public override string ToString()

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 
 namespace BasicSharp
 {
@@ -10,7 +11,7 @@ namespace BasicSharp
 
         public Marker TokenMarker { get; set; }
 
-        public string Identifer { get; set; }
+        public string Identifier { get; set; }
         public Value Value { get; set; }
 
         public Lexer(string input)
@@ -41,6 +42,14 @@ namespace BasicSharp
             return lastChar;
         }
 
+        public bool GetValidChar() {
+            char inChar = GetChar();
+            if (char.IsLetterOrDigit(inChar) || inChar == ' ') {
+                return true;
+            } else {
+                return false;
+            }
+        }
         public Token GetToken()
         {
             while (lastChar == ' ' || lastChar == '\t' || lastChar == '\r')
@@ -50,10 +59,12 @@ namespace BasicSharp
 
             if (char.IsLetter(lastChar))
             {
-                Identifer = lastChar.ToString();
-                while (char.IsLetterOrDigit(GetChar()))
-                    Identifer += lastChar;
-                switch (Identifer.ToUpper())
+                Identifier = lastChar.ToString();
+                //while (char.IsLetterOrDigit(GetChar()))
+                while (GetValidChar())
+                    Identifier += lastChar;
+                Debug.Print(Identifier);
+                switch (Identifier.ToUpper())
                 {
                     case "PRINT": return Token.Print;
                     case "IF": return Token.If;
@@ -92,7 +103,7 @@ namespace BasicSharp
                 return Token.Value;
             }
 
-            Token tok = Token.Unkown;
+            Token tok = Token.Unknown;
             switch (lastChar)
             {
                 case '\n': tok = Token.NewLine; break;
