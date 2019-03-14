@@ -1,4 +1,4 @@
-﻿namespace BasicSharp
+﻿namespace OpenSBP
 {
     public enum Token
     {
@@ -6,6 +6,7 @@
 
         Identifer,
         Value,
+        SystemVar,
 
         // Keyword list.  Any changes to this list must also be made to the
         // keywordList list in the Lexer class!
@@ -31,6 +32,7 @@
         Semicolon,
         Comma,
 
+        Ampersand,  // OpenSBP uses "&" for string concatenation.
         Plus,
         Minus,
         Slash,

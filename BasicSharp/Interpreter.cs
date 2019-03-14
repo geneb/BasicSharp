@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
-namespace BasicSharp {
+namespace OpenSBP {
     public class Interpreter {
-        public bool HasPrint { get; set; } = true;
-        public bool HasInput { get; set; } = true;
-
         private Lexer lex;
         private Token prevToken;
         private Token lastToken;
@@ -111,6 +109,12 @@ namespace BasicSharp {
                     else if (lastToken == Token.Colon) Label();
                     else Expr();
                     break;
+                case Token.SystemVar:
+                    if (lastToken == Token.Equal) Let();
+                    else if (lastToken == Token.Colon) Label();
+                    else Expr();
+                    break;
+
                 case Token.EOF:
                     exit = true;
                     break;
@@ -125,16 +129,10 @@ namespace BasicSharp {
         }
 
         void Print() {
-            if (!HasPrint)
-                Error("Print command not allowed.");
-
             Console.WriteLine(Expr().ToString());
         }
 
         void Input() {
-            if (!HasInput)
-                Error("Input command not allowed.");
-
             while (true) {
                 Match(Token.Identifer);
 
@@ -175,31 +173,16 @@ namespace BasicSharp {
         }
 
         void GoSub() {
-            Match(Token.Identifer);
-            string name = lex.Identifier;
             // store our current location...
             lex.GoSubPush();
-            if (!labels.ContainsKey(name)) {
-                while (true) {
-                    if (GetNextToken() == Token.Colon && prevToken == Token.Identifer) {
-                        if (!labels.ContainsKey(lex.Identifier))
-                            labels.Add(lex.Identifier, lex.TokenMarker);
-                        if (lex.Identifier == name)
-                            break;
-                    }
-                    if (lastToken == Token.EOF) {
-                        Error("Cannot find label named \"" + name + "\".");
-                    }
-                }
-            }
-            lex.GoSub(labels[name]);
-            lastToken = Token.NewLine;
+            Goto(); // Leverage the existing jump code.
         }
 
         void Return() {
-            lex.Return();
+            Marker returnMarker = lex.Return();
+            lex.GoTo(new Marker(returnMarker.Pointer - 1, returnMarker.Line, returnMarker.Column - 1));
             lastToken = Token.NewLine;
-            GetNextToken();
+           
         }
 
         void If() {
@@ -323,7 +306,7 @@ namespace BasicSharp {
                 { Token.Equal, 1 }, { Token.NotEqual, 1 },
                 { Token.Less, 1 }, { Token.More, 1 },
                 { Token.LessEqual, 1 },  { Token.MoreEqual, 1 },
-                { Token.Plus, 2 }, { Token.Minus, 2 },
+                { Token.Plus, 2 }, { Token.Minus, 2 }, {Token.Ampersand, 2},
                 { Token.Asterisk, 3 }, {Token.Slash, 3 },
                 { Token.Caret, 4 }
             };
@@ -331,7 +314,7 @@ namespace BasicSharp {
             Value lhs = Primary();
 
             while (true) {
-                if (lastToken < Token.Plus || lastToken > Token.And || precedens[lastToken] < min)
+                if ((lastToken < Token.Plus) || (lastToken < Token.Ampersand) || lastToken > Token.And || precedens[lastToken] < min)
                     break;
 
                 Token op = lastToken;
@@ -378,7 +361,7 @@ start:
                 prim = Expr();
                 Match(Token.RParen);
                 GetNextToken();
-            } else if (lastToken == Token.Plus || lastToken == Token.Minus) {
+            } else if (lastToken == Token.Plus || lastToken == Token.Ampersand || lastToken == Token.Minus) {
                 Token op = lastToken;
                 GetNextToken();
                 prim = Value.Zero.BinOp(Primary(), op); // we dont realy have a unary operators

@@ -1,5 +1,5 @@
 ﻿
-namespace BasicSharp
+namespace OpenSBP
 {
     public struct Marker
     {

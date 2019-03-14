@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Collections.Generic;
 
-namespace BasicSharp {
+namespace OpenSBP {
     public class Lexer {
         private readonly string source;
         private Marker sourceMarker;
@@ -46,32 +46,19 @@ namespace BasicSharp {
         }
 
         public void GoSubPush() {
-            // This bumps the source line marker by one and
-            // pushes it on to the return stack.  When this
-            // item is popped from the return stack, execution
-            // should resume on the line AFTER the GoSub.
-            Debug.Print("Current Column: " + sourceMarker.Column.ToString());
-            Debug.Print("Current Line: " + sourceMarker.Line.ToString());
-            Debug.Print("Current Pointer: " + sourceMarker.Pointer.ToString());
-
-            Marker workMarker = sourceMarker;
-            workMarker.Column = 1;
-            workMarker.Line++; // moves us to the next source line.
-            workMarker.Pointer++; // should technically be the first character of the next line.
-            returnStack.Push(workMarker);
+            // we store our source position right after we've processed the
+            // jump token + identifier (target label).
+            returnStack.Push(sourceMarker);
         }
         public void GoSub(Marker marker) {
-            //returnStack.Push(marker);
-            sourceMarker = marker;
+            GoTo(marker);
         }
 
-        public void Return() {
-            sourceMarker = returnStack.Pop();
-            Debug.Print("Current Column: " + sourceMarker.Column.ToString());
-            Debug.Print("Current Line: " + sourceMarker.Line.ToString());
-            Debug.Print("Current Pointer: " + sourceMarker.Pointer.ToString());
+        public Marker Return() {
             lastChar = '\r';
+            return returnStack.Pop();
         }
+
         char GetChar() {
             sourceMarker.Column++;
             sourceMarker.Pointer++;
@@ -92,31 +79,85 @@ namespace BasicSharp {
 
         public bool GetValidChar() {
             char inChar = GetChar();
-            if (char.IsLetterOrDigit(inChar) || inChar == ' ') {
-                if (inChar == ' ') {
+            string systemVar = "";
+            int bufMax = 6; // TODO no magic numbers!
+            int bufIdx = 0;
+            if (char.IsLetterOrDigit(inChar) || inChar == ' ' || inChar == '(') {
+                if (inChar == ' ' || inChar == '(') {
                     // let's see if what we've got so far is an actual keyword...
                     if (keywordList.Contains(Identifier.ToUpper().Trim())) {
                         // we might have a full keyword here.  However, we may only have a partial...
-                        // we need to peek ahead in the source code buffer to the next space...
+                        // we need to peek ahead in the source code buffer to see if we've got a 
+                        // two word keyword here.  (ex. end if, on input, etc...)
                         string validKeyword = Identifier + " ";
-                        int bufIdx = 1;
-                        while(((source[sourceMarker.Pointer + bufIdx] != ' ') &&
-                            (source[sourceMarker.Pointer + bufIdx] != '\r') &&
-                            (source[sourceMarker.Pointer + bufIdx] != '\n' )) || (bufIdx > 10)) {  // TODO no magic numbers!
-                            // we go until we find the next space or bufIdx goes way beyond a reasonable point.
-                            validKeyword += source[sourceMarker.Pointer + bufIdx];
-                            bufIdx++;
+                        bufIdx = 1;
+                        if (sourceMarker.Pointer + bufMax > source.Length) {
+                            // don't let us look past the end of the source file!
+                            bufMax = sourceMarker.Pointer - source.Length;
+                        }
+                        if (sourceMarker.Pointer + bufIdx > source.Length) {
+                            // yeah, we're out of source to look through...
+                            return false;
+                        }
+
+                        while (((source[sourceMarker.Pointer + bufIdx] != ' ') &&
+                        (source[sourceMarker.Pointer + bufIdx] != '\r') &&
+                        (source[sourceMarker.Pointer + bufIdx] != '\n')) && (bufIdx <= bufMax)) {
+                            if (sourceMarker.Pointer + bufIdx <= source.Length) {
+                                validKeyword += source[sourceMarker.Pointer + bufIdx];
+                                bufIdx++;
+                            } else {
+                                break;
+                            }
+
                         }
                         if (keywordList.Contains(validKeyword.ToUpper())) {
                             // make the Identifier the valid keyword we just built...
                             Identifier = validKeyword;
-                            // We need to update the source pointer now...
+                            // We need to update the source pointer & column now...
                             sourceMarker.Pointer += (bufIdx - 1);
+                            sourceMarker.Column += (bufIdx - 1);  // will this break something?
                             return false;
                         } else {
                             return false;
                         }
                     } else {
+                        // let's look to see if we have a system variable here...
+                        if (Identifier.StartsWith("%")) {
+                            // Yep, it's a system variable.
+                            if (inChar == '(') {
+                                // we need to police up the rest of it...
+                                systemVar = Identifier;
+                                bufIdx = 0;
+                                while (((source[sourceMarker.Pointer + bufIdx] != ' ') &&
+                                (source[sourceMarker.Pointer + bufIdx] != '\r') &&
+                                (source[sourceMarker.Pointer + bufIdx] != '\n')) && (bufIdx <= bufMax)) {
+                                    if (sourceMarker.Pointer + bufIdx <= source.Length) {
+                                        if (source[sourceMarker.Pointer + bufIdx] == ')') {
+                                            // ensures we get the closing paren.
+                                            systemVar += source[sourceMarker.Pointer + bufIdx];
+                                            break;
+                                        }
+                                        systemVar += source[sourceMarker.Pointer + bufIdx];
+                                        bufIdx++;
+                                    } else {
+                                        break;
+                                    }
+
+                                }
+                            }
+                            // Now we see if what we have is usable...
+                            if (systemVar.StartsWith("%(") && systemVar.EndsWith(")")) {
+                                // make the Identifier the valid keyword we just built...
+                                Identifier = systemVar;
+                                // We need to update the source pointer & column now...
+                                sourceMarker.Pointer += (bufIdx - 1);
+                                sourceMarker.Column += (bufIdx - 1);  // will this break something?
+                                return false;
+                            } else {
+                                return false;
+                            }
+                        }
                         return true;
                     }
                 } else {
@@ -127,43 +168,60 @@ namespace BasicSharp {
             }
         }
         public Token GetToken() {
+            bool skipIdentParse = false;
+           
             while (lastChar == ' ' || lastChar == '\t' || lastChar == '\r')
                 GetChar();
 
             TokenMarker = sourceMarker;
 
-            if (char.IsLetter(lastChar)) {
-                Identifier = lastChar.ToString();
-                //while (char.IsLetterOrDigit(GetChar()))
-                while (GetValidChar())
-                    Identifier += lastChar;
-          
-                //Debug.Print(Identifier);
-                Identifier = Identifier.Trim();
-                switch (Identifier.ToUpper()) {
-                    case "PRINT": return Token.Print;
-                    case "IF": return Token.If;
-                    case "ENDIF":
-                    case "END IF": return Token.EndIf;
-                    case "THEN": return Token.Then;
-                    case "ELSE": return Token.Else;
-                    case "FOR": return Token.For;
-                    case "TO": return Token.To;
-                    case "NEXT": return Token.Next;
-                    case "GOTO": return Token.Goto;
-                    case "INPUT": return Token.Input;
-                    case "LET": return Token.Let;
-                    case "GOSUB": return Token.Gosub;
-                    case "RETURN": return Token.Return;
-                    case "END": return Token.End;
-                    case "OR": return Token.Or;
-                    case "AND": return Token.And;
-                    case "REM":
-                        while (lastChar != '\n') GetChar();
-                        GetChar();
-                        return GetToken();
-                    default:
-                        return Token.Identifer;
+            if (char.IsLetter(lastChar) || lastChar == '&' || lastChar == '%') {
+                // User variables in OpenSBP should start with a &.  System variables start with "%"
+                // The problem is that string concatenation ALSO uses the "&" symbol...
+                // TODO We need to disallow variables that don't start with "&" and "%", per the OpenSBP spec.
+
+                // if lastChar is &, we need to peek ahead and see if the next character is a space.
+                // if it is, we can assume this is a concatenation op...
+                if (lastChar == '&') {
+                    if (source[sourceMarker.Pointer + 1] == ' ') {
+                        skipIdentParse = true;
+                    }
+                }
+                if (!skipIdentParse) {
+                    Identifier = lastChar.ToString();
+                    while (GetValidChar())
+                        Identifier += lastChar;
+
+                    Identifier = Identifier.Trim();
+                    switch (Identifier.ToUpper()) {
+                        case "PRINT": return Token.Print;
+                        case "IF": return Token.If;
+                        case "ENDIF":
+                        case "END IF": return Token.EndIf;
+                        case "THEN": return Token.Then;
+                        case "ELSE": return Token.Else;
+                        case "FOR": return Token.For;
+                        case "TO": return Token.To;
+                        case "NEXT": return Token.Next;
+                        case "GOTO": return Token.Goto;
+                        case "INPUT": return Token.Input;
+                        case "LET": return Token.Let;
+                        case "GOSUB": return Token.Gosub;
+                        case "RETURN": return Token.Return;
+                        case "END": return Token.End;
+                        case "OR": return Token.Or;
+                        case "AND": return Token.And;
+                        case "REM":
+                            while (lastChar != '\n') GetChar();
+                            GetChar();
+                            return GetToken();
+                        default:
+                            if (Identifier.StartsWith("%(")) {
+                                return Token.SystemVar;
+                            } else {
+                                return Token.Identifer;
+                            }
+                    }
                 }
             }
 
@@ -186,6 +244,7 @@ namespace BasicSharp {
                 case ',': tok = Token.Comma; break;
                 case '=': tok = Token.Equal; break;
                 case '+': tok = Token.Plus; break;
+                case '&': tok = Token.Ampersand; break;
                 case '-': tok = Token.Minus; break;
                 case '/': tok = Token.Slash; break;
                 case '*': tok = Token.Asterisk; break;

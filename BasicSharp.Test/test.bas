@@ -1,7 +1,15 @@
+&b = "A User Variable"  ' rem at the end of a line?
+
+print &b + " is the value of &b."
+&b = &b & " adding more..."
+print &b + " is now the value of &b."
+
+%(4) = 6  
+print "The value of %(4) is " + %(4)
+
 gosub mylabel
 print "We returned! Yay!"
 
-let b = 5
 print "Hello World"
 
 let a = 10
@@ -20,10 +28,9 @@ for i = 1 to 10
 	print i
 next i
 
-goto mylabel
-print "False"
-
-
+done:
+	end
+	
 mylabel:
-Print "mylabel hit."
+Print "subroutine mylabel hit."
 return

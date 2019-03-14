@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Windows.Forms;
-namespace BasicSharp.Test {
+namespace OpenSBP.Test {
     class Program {
         [STAThread]  // needed for the file open dialog.
         static void Main(string[] args) {
@@ -18,6 +18,7 @@ namespace BasicSharp.Test {
                 } catch (Exception e) {
                     Console.WriteLine("Runtime Error detected - aborting.");
                     Console.WriteLine("Exception was " + e.Message);
+                    //Console.WriteLine("stack trace:" + e.StackTrace.ToString());
                 }
             }
           
