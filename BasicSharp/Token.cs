@@ -1,5 +1,4 @@
-﻿
-namespace BasicSharp
+﻿namespace BasicSharp
 {
     public enum Token
     {
@@ -8,10 +7,12 @@ namespace BasicSharp
         Identifer,
         Value,
 
-        //Keywords
+        // Keyword list.  Any changes to this list must also be made to the
+        // keywordList list in the Lexer class!
+
         Print,
         If,
-        EndIf,
+        EndIf, // also End If
         Then,
         Else,
         For,
@@ -49,5 +50,5 @@ namespace BasicSharp
         RParen,
 
         EOF = -1   //End Of File
-    }
+    }       
 }

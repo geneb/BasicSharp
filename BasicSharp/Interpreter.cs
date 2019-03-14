@@ -61,7 +61,8 @@ namespace BasicSharp {
         public void Exec() {
             exit = false;
             GetNextToken();
-            while (!exit) Line();
+            while (!exit)
+                Line();
         }
 
         Token GetNextToken() {
@@ -96,6 +97,8 @@ namespace BasicSharp {
                 case Token.Print: Print(); break;
                 case Token.Input: Input(); break;
                 case Token.Goto: Goto(); break;
+                case Token.Gosub: GoSub(); break;
+                case Token.Return: Return(); break;
                 case Token.If: If(); break;
                 case Token.Else: Else(); break;
                 case Token.EndIf: break;
@@ -169,6 +172,34 @@ namespace BasicSharp {
             }
             lex.GoTo(labels[name]);
             lastToken = Token.NewLine;
+        }
+
+        void GoSub() {
+            Match(Token.Identifer);
+            string name = lex.Identifier;
+            // store our current location...
+            lex.GoSubPush();
+            if (!labels.ContainsKey(name)) {
+                while (true) {
+                    if (GetNextToken() == Token.Colon && prevToken == Token.Identifer) {
+                        if (!labels.ContainsKey(lex.Identifier))
+                            labels.Add(lex.Identifier, lex.TokenMarker);
+                        if (lex.Identifier == name)
+                            break;
+                    }
+                    if (lastToken == Token.EOF) {
+                        Error("Cannot find label named \"" + name + "\".");
+                    }
+                }
+            }
+            lex.GoSub(labels[name]);
+            lastToken = Token.NewLine;
+        }
+
+        void Return() {
+            lex.Return();
+            lastToken = Token.NewLine;
+            GetNextToken();
         }
 
         void If() {

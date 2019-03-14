@@ -1,3 +1,7 @@
+gosub mylabel
+print "We returned! Yay!"
+
+let b = 5
 print "Hello World"
 
 let a = 10
@@ -7,10 +11,10 @@ let b = 20
 print "a+b=" + (a+b)
 
 if a = 10 then
-	print "True"
+	print "a is 10"
 else
-	print "False"
-endif
+	print "a is not 10"
+end if
 
 for i = 1 to 10
 	print i
@@ -19,5 +23,7 @@ next i
 goto mylabel
 print "False"
 
+
 mylabel:
-Print "True"
+Print "mylabel hit."
+return
