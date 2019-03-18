@@ -77,6 +77,7 @@ namespace OpenSBP {
                     throw new Exception("Cannot do binop on strings(except +).");  //TODO Needs more detail.
 
                 switch (tok) {
+                    // TODO this area may be a good place to parse the extended OpenSBP operations.
                     case Token.Minus: return new Value(a.Real - b.Real);
                     case Token.Asterisk: return new Value(a.Real * b.Real);
                     case Token.Slash: return new Value(a.Real / b.Real);

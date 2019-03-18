@@ -81,9 +81,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BasicSharp\BasicSharp.csproj">
+    <ProjectReference Include="..\BasicSharp\OpenSBPCore.csproj">
       <Project>{ee73a059-52e2-4e50-b9eb-115c9a0a4af6}</Project>
-      <Name>BasicSharp</Name>
+      <Name>OpenSBPCore</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

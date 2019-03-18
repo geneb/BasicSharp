@@ -18,7 +18,7 @@ namespace OpenSBP.Test {
                 } catch (Exception e) {
                     Console.WriteLine("Runtime Error detected - aborting.");
                     Console.WriteLine("Exception was " + e.Message);
-                    //Console.WriteLine("stack trace:" + e.StackTrace.ToString());
+                    Console.WriteLine("stack trace:" + e.StackTrace.ToString());
                 }
             }
           

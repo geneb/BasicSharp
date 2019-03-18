@@ -4,11 +4,14 @@ using System.Diagnostics;
 
 namespace OpenSBP {
     public class Interpreter {
+        public const int SYSVARMAX = 170;  // Current max # of system variables for OpenSBP
+
         private Lexer lex;
         private Token prevToken;
         private Token lastToken;
 
         private Dictionary<string, Value> vars;
+        private Dictionary<string, Value> sysvars;  // OpenSBP System Variables
         private Dictionary<string, Marker> labels;
         private Dictionary<string, Marker> loops;
 
@@ -24,22 +27,49 @@ namespace OpenSBP {
         public Interpreter(string input) {
             this.lex = new Lexer(input);
             this.vars = new Dictionary<string, Value>();
+            this.sysvars = new Dictionary<string, Value>();
             this.labels = new Dictionary<string, Marker>();
             this.loops = new Dictionary<string, Marker>();
             this.funcs = new Dictionary<string, BasicFunction>();
             this.ifcounter = 0;
             BuiltIns.InstallAll(this);
+            InitializeSystemVariables();
+
         }
 
+        private void InitializeSystemVariables() {
+            // this builds out all the system variables that OpenSBP currently knows about.
+            string varName = "";
+            Value newVal = new Value();
+
+            for(int x = 1; x <= SYSVARMAX; x++) {
+                varName = "%(" + x.ToString() + ")";
+                SetSysVar(varName, Value.Zero);  // makes them exist, but assigns no actual value.
+            }
+
+            // a test
+            SetSysVar("%(1)", new Value(4.1250));
+        }
         public Value GetVar(string name) {
-            if (!vars.ContainsKey(name))
-                throw new Exception("Variable with name \"" + name + "\" does not exist.");
-            return vars[name];
+            if (name.StartsWith("%(")) {
+                if (!sysvars.ContainsKey(name))
+                    throw new Exception("System Variable " + name + " does not exist.");
+                return sysvars[name];
+            } else {
+                if (!vars.ContainsKey(name))
+                    throw new Exception("Variable with name \"" + name + "\" does not exist.");
+                return vars[name];
+            }
         }
 
         public void SetVar(string name, Value val) {
             if (!vars.ContainsKey(name)) vars.Add(name, val);
             else vars[name] = val;
+        }
+
+        public void SetSysVar(string name, Value val) {
+            if (!sysvars.ContainsKey(name)) sysvars.Add(name, val);
+            else sysvars[name] = val;
         }
 
         public void AddFunction(string name, BasicFunction function) {
@@ -182,7 +212,7 @@ namespace OpenSBP {
             Marker returnMarker = lex.Return();
             lex.GoTo(new Marker(returnMarker.Pointer - 1, returnMarker.Line, returnMarker.Column - 1));
             lastToken = Token.NewLine;
-           
+
         }
 
         void If() {
@@ -314,7 +344,8 @@ namespace OpenSBP {
             Value lhs = Primary();
 
             while (true) {
-                if ((lastToken < Token.Plus) || (lastToken < Token.Ampersand) || lastToken > Token.And || precedens[lastToken] < min)
+                // When the string concat operator & is being used, we need to treat it as much as the + operator as we can.
+                if ((lastToken < Token.Plus && lastToken < Token.Ampersand) || (lastToken < Token.Ampersand) || lastToken > Token.And || precedens[lastToken] < min)
                     break;
 
                 Token op = lastToken;
@@ -338,13 +369,37 @@ namespace OpenSBP {
             } else if (lastToken == Token.Identifer) {
                 if (vars.ContainsKey(lex.Identifier)) {
                     prim = vars[lex.Identifier];
+                } else if (sysvars.ContainsKey(lex.Identifier)) {
+                    prim = sysvars[lex.Identifier];
                 } else if (funcs.ContainsKey(lex.Identifier)) {
                     string name = lex.Identifier;
                     List<Value> args = new List<Value>();
                     GetNextToken();
                     Match(Token.LParen);
 
-start:
+                start:
+                    if (GetNextToken() != Token.RParen) {
+                        args.Add(Expr());
+                        if (lastToken == Token.Comma)
+                            goto start;
+                    }
+
+                    prim = funcs[name](null, args);
+                } else {
+                    Error("Undeclared variable \"" + lex.Identifier + "\"");
+                }
+                GetNextToken();
+            } else if (lastToken == Token.SystemVar) {
+                // Process the OpenSBP System Variable....
+                if (sysvars.ContainsKey(lex.Identifier)) {
+                    prim = sysvars[lex.Identifier];
+                } else if (funcs.ContainsKey(lex.Identifier)) {
+                    string name = lex.Identifier;
+                    List<Value> args = new List<Value>();
+                    GetNextToken();
+                    Match(Token.LParen);
+
+                start:
                     if (GetNextToken() != Token.RParen) {
                         args.Add(Expr());
                         if (lastToken == Token.Comma)

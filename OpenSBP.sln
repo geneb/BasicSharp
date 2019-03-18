@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.438
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BasicSharp", "BasicSharp\BasicSharp.csproj", "{EE73A059-52E2-4E50-B9EB-115C9A0A4AF6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenSBPCore", "BasicSharp\OpenSBPCore.csproj", "{EE73A059-52E2-4E50-B9EB-115C9A0A4AF6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BasicSharp.Test", "BasicSharp.Test\BasicSharp.Test.csproj", "{413B4EE1-BE77-4F68-8190-FD750590123A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenSBPCore.Test", "BasicSharp.Test\OpenSBPCore.Test.csproj", "{413B4EE1-BE77-4F68-8190-FD750590123A}"
 	ProjectSection(ProjectDependencies) = postProject
 		{EE73A059-52E2-4E50-B9EB-115C9A0A4AF6} = {EE73A059-52E2-4E50-B9EB-115C9A0A4AF6}
 	EndProjectSection

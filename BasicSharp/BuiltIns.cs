@@ -10,6 +10,7 @@ namespace OpenSBP
     {
         public static void InstallAll(Interpreter interpreter)
         {
+            // TODO add OpenSBP math functions here.
             interpreter.AddFunction("str", Str);
             interpreter.AddFunction("num", Num);
             interpreter.AddFunction("abs", Abs);

@@ -21,12 +21,43 @@ namespace OpenSBP {
             "TO",
             "NEXT",
             "GOTO",
-            "INPUT",
+            "INPUT", // Page 15 - This keyword needs to be able to handle the two different modes
+                     // of input that OpenSBP has - one is a dialog box-oriented version that can return up
+                     // to ten variables, the second is used to read data from a file via, "INPUT #"
+                     // if we're doing the dialog box input, then the token should be "InputUser".  If
+                     // we're parsing the file input version, the token should be "InputFile".
             "LET",
             "GOSUB",
             "RETURN",
             "REM",
-            "END"};
+            "END",
+                // New keywords for OpenSBP
+        // TODO There are a number of mathematical operations that OpenSBP support.  See the "Operations" list.
+              
+        "CLOSE",       // Page 12
+        "END ALL",      // Page 12
+        "EXIT SHOPBOT", // Page 13
+        "MSGBOX",      // Page 15-17
+        "ON INPUT",     // Page 17-18
+        "OPEN",    // Page 18
+        "PAUSE",       // Page 19-20
+        "PLAY",        // Page 20-21
+        "SHELL",       // Page 23-24
+        "WARNING OFF",  // Page 25
+        "WRITE",   // Pages 25-26
+        
+        //  These are special registry commands that allow reading/writing to the ShopBot area of the Windows registry.
+        //  This should probably be configured to read/write data from an ini file of some sort, as Linux has no "registry".
+        "SETUSRVAL",        // Page 26
+        "SETUSRVALCLRD",    // Page 26
+        "SETSPINDLESTATUS", // Page 26
+        "GETUSRVAL",        // Page 26
+        "GETUSRVALCLRD",    // Page 26
+        "GETUSRPATH",       // Page 26
+        "GETAPPPATH",       // Page 27
+        "GETPARTFILENAME",  // Page 27
+        "GETSPINDLESTATUS" }; // Page 28
+        
 
         private Stack<Marker> returnStack = new Stack<Marker>();
 
@@ -78,98 +109,106 @@ namespace OpenSBP {
         }
 
         public bool GetValidChar() {
+            // TODO Need a more elegant way of determining if the character we have
+            //      is valid for an identifier or keyword.
+
             char inChar = GetChar();
             string systemVar = "";
             int bufMax = 6; // TODO no magic numbers!
             int bufIdx = 0;
             if (char.IsLetterOrDigit(inChar) || inChar == ' ' || inChar == '(') {
-                if (inChar == ' ' || inChar == '(') {
-                    // let's see if what we've got so far is an actual keyword...
-                    if (keywordList.Contains(Identifier.ToUpper().Trim())) {
-                        // we might have a full keyword here.  However, we may only have a partial...
-                        // we need to peek ahead in the source code buffer to see if we've got a 
-                        // two word keyword here.  (ex. end if, on input, etc...)
-                        string validKeyword = Identifier + " ";
-                        bufIdx = 1;
-                        if (sourceMarker.Pointer + bufMax > source.Length) {
-                            // don't let us look past the end of the source file!
-                            bufMax = sourceMarker.Pointer - source.Length;
-                        }
-                        if (sourceMarker.Pointer + bufIdx > source.Length) {
-                            // yeah, we're out of source to look through...
-                            return false;
+                //if (inChar == ' ' || inChar == '(' || inChar == '_') {
+                // let's see if what we've got so far is an actual keyword...
+                if (keywordList.Contains(Identifier.ToUpper().Trim())) {
+                    // we might have a full keyword here.  However, we may only have a partial...
+                    // we need to peek ahead in the source code buffer to see if we've got a 
+                    // two word keyword here.  (ex. end if, on input, etc...)
+                    string validKeyword = Identifier + " ";
+                    bufIdx = 1;
+                    if (sourceMarker.Pointer + bufMax > source.Length) {
+                        // don't let us look past the end of the source file!
+                        bufMax = sourceMarker.Pointer - source.Length;
+                    }
+                    if (sourceMarker.Pointer + bufIdx > source.Length) {
+                        // yeah, we're out of source to look through...
+                        return false;
+                    }
+
+                    while (((source[sourceMarker.Pointer + bufIdx] != ' ') &&
+                    (source[sourceMarker.Pointer + bufIdx] != '\r') &&
+                    (source[sourceMarker.Pointer + bufIdx] != '\n')) && (bufIdx <= bufMax)) {
+                        if (sourceMarker.Pointer + bufIdx <= source.Length) {
+                            validKeyword += source[sourceMarker.Pointer + bufIdx];
+                            bufIdx++;
+                        } else {
+                            break;
                         }
 
-                        while (((source[sourceMarker.Pointer + bufIdx] != ' ') &&
-                        (source[sourceMarker.Pointer + bufIdx] != '\r') &&
-                        (source[sourceMarker.Pointer + bufIdx] != '\n')) && (bufIdx <= bufMax)) {
-                            if (sourceMarker.Pointer + bufIdx <= source.Length) {
-                                validKeyword += source[sourceMarker.Pointer + bufIdx];
-                                bufIdx++;
-                            } else {
-                                break;
+                    }
+                    if (keywordList.Contains(validKeyword.ToUpper())) {
+                        // make the Identifier the valid keyword we just built...
+                        Identifier = validKeyword;
+                        // We need to update the source pointer & column now...
+                        sourceMarker.Pointer += (bufIdx - 1);
+                        sourceMarker.Column += (bufIdx - 1);  // will this break something?
+                        return false;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    // let's look to see if we have a system variable here...
+                    if (Identifier.StartsWith("%")) {
+                        // Yep, it's a system variable.
+                        if (inChar == '(') {
+                            // we need to police up the rest of it...
+                            systemVar = Identifier;
+                            bufIdx = 0;
+                            while (((source[sourceMarker.Pointer + bufIdx] != ' ') &&
+                            (source[sourceMarker.Pointer + bufIdx] != '\r') &&
+                            (source[sourceMarker.Pointer + bufIdx] != '\n')) && (bufIdx <= bufMax)) {
+                                if (sourceMarker.Pointer + bufIdx <= source.Length) {
+                                    if (source[sourceMarker.Pointer + bufIdx] == ')') {
+                                        // ensures we get the closing paren.
+                                        systemVar += source[sourceMarker.Pointer + bufIdx];
+                                        break;
+                                    }
+                                    systemVar += source[sourceMarker.Pointer + bufIdx];
+                                    bufIdx++;
+                                } else {
+                                    break;
+                                }
+
                             }
-
                         }
-                        if (keywordList.Contains(validKeyword.ToUpper())) {
+                        // Now we see if what we have is usable...
+                        if (systemVar.StartsWith("%(") && systemVar.EndsWith(")")) {
                             // make the Identifier the valid keyword we just built...
-                            Identifier = validKeyword;
+                            Identifier = systemVar;
                             // We need to update the source pointer & column now...
-                            sourceMarker.Pointer += (bufIdx - 1);
-                            sourceMarker.Column += (bufIdx - 1);  // will this break something?
+                            sourceMarker.Pointer += bufIdx + 1;
+                            sourceMarker.Column += bufIdx + 1;  // will this break something?
+                            lastChar = source[sourceMarker.Pointer]; // hide the fact that the last actual "real" character was "("
                             return false;
                         } else {
                             return false;
                         }
-                    } else {
-                        // let's look to see if we have a system variable here...
-                        if (Identifier.StartsWith("%")) {
-                            // Yep, it's a system variable.
-                            if (inChar == '(') {
-                                // we need to police up the rest of it...
-                                systemVar = Identifier;
-                                bufIdx = 0;
-                                while (((source[sourceMarker.Pointer + bufIdx] != ' ') &&
-                                (source[sourceMarker.Pointer + bufIdx] != '\r') &&
-                                (source[sourceMarker.Pointer + bufIdx] != '\n')) && (bufIdx <= bufMax)) {
-                                    if (sourceMarker.Pointer + bufIdx <= source.Length) {
-                                        if (source[sourceMarker.Pointer + bufIdx] == ')') {
-                                            // ensures we get the closing paren.
-                                            systemVar += source[sourceMarker.Pointer + bufIdx];
-                                            break;
-                                        }
-                                        systemVar += source[sourceMarker.Pointer + bufIdx];
-                                        bufIdx++;
-                                    } else {
-                                        break;
-                                    }
-
-                                }
-                            }
-                            // Now we see if what we have is usable...
-                            if (systemVar.StartsWith("%(") && systemVar.EndsWith(")")) {
-                                // make the Identifier the valid keyword we just built...
-                                Identifier = systemVar;
-                                // We need to update the source pointer & column now...
-                                sourceMarker.Pointer += (bufIdx - 1);
-                                sourceMarker.Column += (bufIdx - 1);  // will this break something?
-                                return false;
-                            } else {
-                                return false;
-                            }
-                        }
-                        return true;
                     }
-                } else {
                     return true;
                 }
-            } else {
+                //} else {
+                //    return true;
+                //}
+            } else if (inChar == '_') {
+                // underscores are permitted.
+                return true;
+            } else
                 return false;
-            }
+
         }
+
         public Token GetToken() {
             bool skipIdentParse = false;
-           
+
             while (lastChar == ' ' || lastChar == '\t' || lastChar == '\r')
                 GetChar();
 
