@@ -7,8 +7,8 @@
     <ProjectGuid>{413B4EE1-BE77-4F68-8190-FD750590123A}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BasicSharp.Test</RootNamespace>
-    <AssemblyName>BasicSharp.Test</AssemblyName>
+    <RootNamespace>OpenSBPCore.Test</RootNamespace>
+    <AssemblyName>OpenSBPCore.Test</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <PublishUrl>publish\</PublishUrl>

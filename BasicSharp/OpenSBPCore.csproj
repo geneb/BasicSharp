@@ -7,8 +7,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{EE73A059-52E2-4E50-B9EB-115C9A0A4AF6}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>BasicSharp</RootNamespace>
-    <AssemblyName>BasicSharp</AssemblyName>
+    <RootNamespace>OpenSBPCore</RootNamespace>
+    <AssemblyName>OpenSBPCore</AssemblyName>
     <StartupObject>
     </StartupObject>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>

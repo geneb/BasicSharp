@@ -9,9 +9,10 @@ namespace OpenSBP.Test {
             string fileName = "";
             if (fDialog.ShowDialog() == DialogResult.OK) {
                 fileName = fDialog.FileName;
+                fDialog.Dispose();
                 Interpreter basic = new Interpreter(File.ReadAllText(fileName));
                 try {
-                    Console.WriteLine("BasicSharp Intepreter Start.");
+                    Console.WriteLine("OpenSBPCore Intepreter Start.");
                     Console.WriteLine("----------------------------\n");
                     basic.Exec();
                     Console.WriteLine("No errors during run.");
