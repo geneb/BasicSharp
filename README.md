@@ -1,6 +1,6 @@
-This is the language interpreter for my OpenSBP project.  This intepreter is based
-upon the BasicSharp project (https://github.com/Timu5/BasicSharp) written by
-Mateusz Muszyñski.  The BasicSharp project was chosen because it was a very simple,
+This is the language interpreter and user client for my OpenSBP project.  
+The intepreter is based upon the BasicSharp project (https://github.com/Timu5/BasicSharp) 
+written by Mateusz Muszyñski.  The BasicSharp project was chosen because it was a very simple,
 BASIC-like interpreter that had good, very extensible, "bones".
 
 Over time, this interpreter will fully conform to the language specification at 
