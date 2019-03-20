@@ -4,9 +4,11 @@
 ' *******************************************************
 ' * 17Mar18 gwb Started.
 ' *
+' Strict On  ' If this is on, only & prefixed variables will work (besides system vars)
 
-print "Starting Tests."
-gosub assignment_tests
+print "Starting Tests."  ' end of line remark.
+'gosub assignment_tests   ' another end of line remark.
+gosub file_tests
 
 end
 assignment_tests:
@@ -15,12 +17,12 @@ assignment_tests:
 '*******************
 print "Assignment Tests"
 
-c = "a"
-print "Assigned " + c + " to c."
-c = c + " b"
-print "Concat with '+' operator: c is now " + c
-c = "& contat" & "enation."
-print "Concat with '&' operator: " + c
+&c = "a"
+print "Assigned " + &c + " to &c."
+&c = &c + " b"
+print "Concat with '+' operator: c is now " + &c
+&c = "& contat" & "enation."
+print "Concat with '&' operator: " + &c
 
 &b = "A User Variable"   : REM end of line comment
 print "&b is now " + &b
@@ -33,6 +35,33 @@ print "bigNum is now " + &bigNum
 
 return
 
+file_tests:
+'**************************
+'* File manipulation tests*
+'**************************
+print "File Manipulation Tests"
+
+	open "test.file" for append as #1
+	&test = "test variable |"
+	write #1, "This is some data", "and more data", &test;
+	&a = "data1"
+	&b = "data2"
+	&c = "data3"
+    write #1, " (on same line)", &a, &b, &c, &a, "testing", &c, &a
+	write #1, "M2 5.00";
+	write #1, ", 3.400"
+	' examples from Page 25
+	write #1, "The next line should read,'&myVar = 23.5'"
+	&someVar = 23.5
+	write #1; "&myVar = "; &someVar
+	write #1, "The next line should read, 'M2, 23.5, 23.5'"
+
+	&someVar = 23.5
+	write #1; "M2, "; &someVar; ", "; &someVar
+	write #1, "this is the end of the file."
+	close #1
+	
+return
 
 
 'print &b + " is the value of &b."

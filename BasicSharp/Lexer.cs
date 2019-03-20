@@ -7,6 +7,7 @@ namespace OpenSBP {
         private readonly string source;
         private Marker sourceMarker;
         private char lastChar;
+        private int fileNumber;
 
         private List<string> keywordList = new List<string>() {
             // If any changes are made to this list of keywords, the 
@@ -31,39 +32,55 @@ namespace OpenSBP {
             "RETURN",
             "REM",
             "END",
-                // New keywords for OpenSBP
-        // TODO There are a number of mathematical operations that OpenSBP support.  See the "Operations" list.
-              
-        "CLOSE",       // Page 12
-        "END ALL",      // Page 12
-        "EXIT SHOPBOT", // Page 13
-        "MSGBOX",      // Page 15-17
-        "ON INPUT",     // Page 17-18
-        "OPEN",    // Page 18
-        "PAUSE",       // Page 19-20
-        "PLAY",        // Page 20-21
-        "SHELL",       // Page 23-24
-        "WARNING OFF",  // Page 25
-        "WRITE",   // Pages 25-26
+            // New keywords for OpenSBP
+            // TODO There are a number of mathematical operations that OpenSBP support.  See the "Operations" list.
+            "STRICT ON", // Enforces strict adherence to OpenSBP language grammar rules.  
+            "CLOSE",       // Page 12
+            "END ALL",      // Page 12
+            "EXIT SHOPBOT", // Page 13
+            "MSGBOX",      // Page 15-17
+            "ON INPUT",     // Page 17-18
+            "OPEN",    // Page 18
+            "OUTPUT",  // OUTPUT, APPEND, and AS are keywords used only by the open file routine.
+            "APPEND",  
+            "AS",
+            "PAUSE",       // Page 19-20
+            "PLAY",        // Page 20-21
+            "SHELL",       // Page 23-24
+            "WARNING OFF",  // Page 25
+            "WRITE",   // Pages 25-26
         
-        //  These are special registry commands that allow reading/writing to the ShopBot area of the Windows registry.
-        //  This should probably be configured to read/write data from an ini file of some sort, as Linux has no "registry".
-        "SETUSRVAL",        // Page 26
-        "SETUSRVALCLRD",    // Page 26
-        "SETSPINDLESTATUS", // Page 26
-        "GETUSRVAL",        // Page 26
-        "GETUSRVALCLRD",    // Page 26
-        "GETUSRPATH",       // Page 26
-        "GETAPPPATH",       // Page 27
-        "GETPARTFILENAME",  // Page 27
-        "GETSPINDLESTATUS" }; // Page 28
-        
+            //  These are special registry commands that allow reading/writing to the ShopBot area of the Windows registry.
+            //  This should probably be configured to read/write data from an ini file of some sort, as Linux has no "registry".
+            "SETUSRVAL",        // Page 26
+            "SETUSRVALCLRD",    // Page 26
+            "SETSPINDLESTATUS", // Page 26
+            "GETUSRVAL",        // Page 26
+            "GETUSRVALCLRD",    // Page 26
+            "GETUSRPATH",       // Page 26
+            "GETAPPPATH",       // Page 27
+            "GETPARTFILENAME",  // Page 27
+            "GETSPINDLESTATUS" }; // Page 28
 
         private Stack<Marker> returnStack = new Stack<Marker>();
 
+        public List<string> KeyWordList {
+            get {
+                return keywordList;
+            }
+        }
+
+        public int FileNumber {
+            get {
+                return fileNumber;
+            }
+        }
         public Marker TokenMarker { get; set; }
 
         public string Identifier { get; set; }
+
+        public bool StrictMode { get; set; }
+
         public Value Value { get; set; }
 
         public Lexer(string input) {
@@ -214,7 +231,8 @@ namespace OpenSBP {
 
             TokenMarker = sourceMarker;
 
-            if (char.IsLetter(lastChar) || lastChar == '&' || lastChar == '%') {
+            if (char.IsLetter(lastChar) || lastChar == '&' || lastChar == '%' ||
+                lastChar == '#') {
                 // User variables in OpenSBP should start with a &.  System variables start with "%"
                 // The problem is that string concatenation ALSO uses the "&" symbol...
                 // TODO We need to disallow variables that don't start with "&" and "%", per the OpenSBP spec.
@@ -250,16 +268,33 @@ namespace OpenSBP {
                         case "END": return Token.End;
                         case "OR": return Token.Or;
                         case "AND": return Token.And;
+                        case "OPEN": return Token.OpenFile;
+                        case "CLOSE": return Token.Close;
+                        case "OUTPUT": return Token.Output;
+                        case "APPEND": return Token.Append;
+                        case "AS": return Token.As;
+                        case "WRITE": return Token.WriteFile;
+
                         case "REM":
                             while (lastChar != '\n') GetChar();
                             GetChar();
                             return GetToken();
+                        case "STRICT ON": return Token.StrictOn;
+
                         default:
+                            // Handle file # for open, input, write, and close
+                            if (Identifier.StartsWith("#")) {
+                                string strTemp = Identifier.Substring(1);
+                                fileNumber = -1;
+                                int.TryParse(strTemp, out fileNumber);
+                                return Token.FileNumber;
+                            }
+
                             if (Identifier.StartsWith("%(")) {
                                 return Token.SystemVar;
-                            } else {
+                            } else
                                 return Token.Identifer;
-                            }
+
                     }
                 }
             }
@@ -290,10 +325,13 @@ namespace OpenSBP {
                 case '^': tok = Token.Caret; break;
                 case '(': tok = Token.LParen; break;
                 case ')': tok = Token.RParen; break;
-                case '\'':
+                case '\'': // Handles single char REM statement.
                     while (lastChar != '\n') GetChar();
-                    GetChar();
+                    //GetChar(); This GetChar() call was resulting in an error if the
+                    //           comment was placed at the end of a normal program line,
+                    //           and was NOT separated from the normal statement with a colon.
                     return GetToken();
+
                 case '<':
                     GetChar();
                     if (lastChar == '>') tok = Token.NotEqual;

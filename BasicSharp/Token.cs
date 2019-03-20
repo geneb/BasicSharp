@@ -31,7 +31,11 @@
 
         // New keywords for OpenSBP
         // TODO There are a number of mathematical operations that OpenSBP support.  See the "Operations" list.
-              
+        StrictOn,    // Enforces strict adherence to OpenSBP language grammar rules.    
+                     // For example, OpenSBP dictates that variables must be prefixed with "&", eg. "&MaxZ"
+                     // Without STRICT ON being set, "MaxZ" could also be used (but would be different from
+                     // "&MaxZ".  With STRICT ON set, "MaxZ" would generate an error.
+                     // There is no STRICT OFF.  It's a go or no-go kind of thing.
         Close,       // Page 12
         EndAll,      // Page 12
         ExitShopBot, // Page 13
@@ -83,6 +87,11 @@
 
         LParen,
         RParen,
+
+        Output, // these are used in addition to the Input token for the file open routine.
+        Append, 
+        As,
+        FileNumber,
 
         EOF = -1   //End Of File
     }       
