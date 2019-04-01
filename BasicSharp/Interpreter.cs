@@ -6,6 +6,8 @@ using System.Diagnostics;
 
 namespace OpenSBP {
     public class Interpreter {
+        // TODO Convert any string concatenation operations to use StringBuilder.
+
         public const int SYSVARMAX = 170;  // Current max # of system variables for OpenSBP
         public const int MAXFILES = 9;     // OpenSBP max # of open files.
 
@@ -178,6 +180,8 @@ namespace OpenSBP {
         public void OpenUserFile(int fileNum, string fileName, string mode) {
             FileInfo workStream = new FileInfo();
 
+            fileName = @"" + fileName;
+
             // TODO need to check to see if the fileNum slot is open, if it is
             //      throw an error indicating the file # is in use.
             //      Don't calculate the next file slot, use fileNum as passed.
@@ -341,6 +345,8 @@ namespace OpenSBP {
         }
 
         void OpenUserFile() {
+            // TODO a filename like "d:\test.txt" will throw an invalid character exception because
+            //      of the single "\" character.  This needs to be handled!
             string fileName = Expr().ToString();
             string mode;
             if (lastToken != Token.For) {
@@ -375,10 +381,94 @@ namespace OpenSBP {
             Console.WriteLine(Expr().ToString());
         }
 
+        void ReadFromFile() {
+            if (lex.FileNumber == 0)
+                Error("Invalid file # specified");
+
+            GetNextToken();
+            if (lastToken != Token.Comma)
+                Error("Syntax error - missing ','");
+
+            if (!userFiles.ContainsKey(lex.FileNumber))
+                Error("Invalid File # specified - file not open");
+
+            FileInfo workStream = userFiles[lex.FileNumber];
+            if (workStream.Reader == null) {
+                Error("File #" + lex.FileNumber + " is not open for reading!");
+
+            }
+            GetNextToken();
+            //inputStr = Expr(inputMode: true).ToString();
+            StringBuilder inputStr = new StringBuilder();
+            string resultStr = "";
+            double valDouble;
+            bool quoteStart = false;
+            bool commaSep = false;
+            char workCh;
+
+            while (true) {
+                Match(Token.Identifer);
+
+                if (!vars.ContainsKey(lex.Identifier))
+                    vars.Add(lex.Identifier, new Value());
+
+                // if a line in a file we're reading (after any whitespace) begins with a comma,
+                // we need to assign the entire line contents to a single variable.
+                // If however, the line is not "quoted", we need to assign up to the occurance of a comma
+                // to the variable in the input statement, and subsequent variables as shown on page # 15
+                // of the 2015 ShopBot Programming Handbook.
+                inputStr.Clear();
+                valDouble = 0.0;
+                quoteStart = false;
+
+
+                //string input = workStream.Reader.ReadLine();
+                while (true) {
+                    // TODO - Need to encapsulate disk reads with try..catch.
+                    workCh = (char)workStream.Reader.Read();
+                    if (workCh == '\n')
+                        break;
+                    if (workCh == '"') {// we read until we hit a newline, and we don't include the quotes in the data.
+                        quoteStart = true;
+                        // we need to strip any leading whitespace if we've accumulated any - this makes the result conform
+                        // to how the ShopBot interpreter works.
+                        string holdStr = inputStr.ToString().TrimStart();
+                        inputStr.Clear();
+                        inputStr.Append(holdStr);
+                    }
+                    if (workCh != '"') {
+                        if (quoteStart) // we add all characters except newline or a quote since we're grabbing it all.
+                            inputStr.Append(workCh);
+                        else {
+                            if (workCh == ',') { // we don't add the comma to the read value.
+                                commaSep = true;
+                                break;
+                            } else
+                                inputStr.Append(workCh);
+                        }
+                    }
+                }
+
+                if (commaSep) {
+                    resultStr = inputStr.ToString().Trim();
+                } else {
+                    resultStr = inputStr.ToString();
+                }
+
+                if (double.TryParse(resultStr, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out valDouble))
+                    vars[lex.Identifier] = new Value(valDouble);
+                else
+                    vars[lex.Identifier] = new Value(resultStr);
+
+                GetNextToken();
+                if (lastToken != Token.Comma) break;
+                GetNextToken();
+            }
+        }
+
         void WriteToFile() {
             StringBuilder outputStr = new StringBuilder();
 
-            Token holdToken;
             if (lastToken != Token.FileNumber)
                 Error("Syntax error = file # expected");
 
@@ -397,7 +487,6 @@ namespace OpenSBP {
             GetNextToken();
             outputStr.Append(Expr().ToString());
 
-            // TODO 
             while (lastToken != Token.NewLine) {
                 switch (lastToken) {
                     // if the token is a comma, we write out ", " between chunks that we get.
@@ -407,14 +496,14 @@ namespace OpenSBP {
                     case Token.Comma: {
                             if (lastToken == Token.Comma)
                                 outputStr.Append(", ");
-                            Debug.Print(outputStr.ToString());
+
                             GetNextToken();
                             if (lastToken == Token.Value || lastToken == Token.Identifer) {
-                                holdToken = prevToken;
                                 outputStr.Append(Expr().ToString());
+
                                 if (lastToken == Token.Comma)
                                     outputStr.Append(", ");
-                                Debug.Print(outputStr.ToString());
+
                                 if (lastToken != Token.NewLine)
                                     GetNextToken();
                             }
@@ -425,7 +514,6 @@ namespace OpenSBP {
                         outputStr.Append(Expr().ToString());
                         break;
                     case Token.Semicolon:
-                        Debug.Print(outputStr.ToString());
                         GetNextToken();
                         break;
                     default:
@@ -436,29 +524,32 @@ namespace OpenSBP {
             }
             if (prevToken == Token.Identifer) {
                 workStream.Writer.WriteLine(outputStr.ToString());
-                Debug.Print(outputStr.ToString());
             } else if (prevToken == Token.Semicolon) {
                 workStream.Writer.Write(outputStr.ToString());
             } else if (prevToken == Token.Value)
                 workStream.Writer.WriteLine(outputStr.ToString());
-
         }
+
         void Input() {
-            while (true) {
-                Match(Token.Identifer);
+            if (lastToken == Token.FileNumber) {
+                ReadFromFile();
+            } else {
+                while (true) {
+                    Match(Token.Identifer);
 
-                if (!vars.ContainsKey(lex.Identifier)) vars.Add(lex.Identifier, new Value());
+                    if (!vars.ContainsKey(lex.Identifier)) vars.Add(lex.Identifier, new Value());
 
-                string input = Console.ReadLine();
-                double d;
-                if (double.TryParse(input, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out d))
-                    vars[lex.Identifier] = new Value(d);
-                else
-                    vars[lex.Identifier] = new Value(input);
+                    string input = Console.ReadLine();
+                    double d;
+                    if (double.TryParse(input, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out d))
+                        vars[lex.Identifier] = new Value(d);
+                    else
+                        vars[lex.Identifier] = new Value(input);
 
-                GetNextToken();
-                if (lastToken != Token.Comma) break;
-                GetNextToken();
+                    GetNextToken();
+                    if (lastToken != Token.Comma) break;
+                    GetNextToken();
+                }
             }
         }
 
@@ -627,10 +718,10 @@ namespace OpenSBP {
 
             while (true) {
                 // When the string concat operator & is being used, we need to treat it as much as the + operator as we can.
+
                 if ((lastToken < Token.Plus && lastToken < Token.Ampersand) ||
                     (lastToken < Token.Ampersand) || lastToken > Token.And || precedens[lastToken] < min)
                     break;
-
                 Token op = lastToken;
                 int prec = precedens[lastToken];
                 int assoc = 0; // 0 left, 1 right
@@ -649,7 +740,7 @@ namespace OpenSBP {
             if (lastToken == Token.Value) {
                 prim = lex.Value;
                 GetNextToken();
-            } else if (lastToken == Token.Identifer) {
+            } else if ((lastToken == Token.Identifer)) {
                 if (vars.ContainsKey(lex.Identifier)) {
                     prim = vars[lex.Identifier];
                 } else if (sysvars.ContainsKey(lex.Identifier)) {

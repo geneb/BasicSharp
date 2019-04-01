@@ -7,8 +7,9 @@
 ' Strict On  ' If this is on, only & prefixed variables will work (besides system vars)
 
 print "Starting Tests."  ' end of line remark.
-'gosub assignment_tests   ' another end of line remark.
-gosub file_tests
+' gosub assignment_tests   ' another end of line remark.
+' gosub file_write_test
+gosub file_read_test
 
 end
 assignment_tests:
@@ -35,13 +36,13 @@ print "bigNum is now " + &bigNum
 
 return
 
-file_tests:
+file_write_test:
 '**************************
 '* File manipulation tests*
 '**************************
-print "File Manipulation Tests"
+print "File Create/Write Tests"
 
-	open "test.file" for append as #1
+	open "test.file" for output as #1 ' append works too!
 	&test = "test variable |"
 	write #1, "This is some data", "and more data", &test;
 	&a = "data1"
@@ -60,6 +61,31 @@ print "File Manipulation Tests"
 	write #1; "M2, "; &someVar; ", "; &someVar
 	write #1, "this is the end of the file."
 	close #1
+	' now we try reading it back!
+	open "test.file" for input as #1
+	input #1, &field1, &field2
+	print "&field1 = " + &field1
+	print "&field2 = " + &field2
+	close #1
+	return
+	
+file_read_test:
+	' This is a more specific test of the input parsing routine.
+	open "d:\\test.txt" for input as #5
+	input #5,&val1
+	print "&val1 = " + &val1
+	input #5, &val2
+	print "&val2 = " + &val2
+	input #5, &val3
+	print "&val3 = "+&val3
+	input #5, &val4, &val5, &val6, &val7
+	print "&val4 = "+&val4
+	print "&val5 = "+&val5
+	print "&val6 = "+&val6
+	print "&val7 = "+ &val7
+	input #5, &val8
+	print "&val8 = "+ &val8
+	close #5	
 	
 return
 

@@ -72,6 +72,8 @@ namespace OpenSBP {
                     return new Value(a.Real == b.Real ? 0 : 1);
                 else
                     return new Value(a.String == b.String ? 0 : 1);
+            } else if (tok == Token.Comma) {
+                    return new Value("     " + b.String);
             } else {
                 if (a.Type == ValueType.String)
                     throw new Exception("Cannot do binop on strings(except +).");  //TODO Needs more detail.
