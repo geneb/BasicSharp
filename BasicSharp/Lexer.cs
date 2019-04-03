@@ -9,6 +9,38 @@ namespace OpenSBP {
         private char lastChar;
         private int fileNumber;
 
+        private List<string> functionList = new List<String>() {
+            // This list exists because of how I modified the original BasicSharp interpreter to 
+            // handle variable names for OpenSBP.  It effectively broke the original author's method
+            // of executing the built-in system functions.
+            // Any new routine added to the build-in system function list MUST be added here as well.
+            // There's probably a better way of handling this, but I'm not interested in chasing down that
+            // particular rabbit hole right now.
+            "STR",
+            "NUM",
+            "ABS",
+            "MIN",
+            "MAX",
+            "NOT",
+            "MSGBOX"
+        };
+
+        public List<string> sbpList = new List<String>() {
+            "MX",
+            "MY",
+            "MZ",
+            "M2",
+            "M3",
+            "MH",
+            "MA",
+            "MB",
+            "M4",
+            "M5",
+            "MO",
+            "M0",
+            "MS"
+
+        };
         private List<string> keywordList = new List<string>() {
             // If any changes are made to this list of keywords, the 
             // Token enum in Token.cs must be updated as well!
@@ -38,7 +70,7 @@ namespace OpenSBP {
             "CLOSE",       // Page 12
             "END ALL",      // Page 12
             "EXIT SHOPBOT", // Page 13
-            "MSGBOX",      // Page 15-17
+            //"MSGBOX",      // Page 15-17
             "ON INPUT",     // Page 17-18
             "OPEN",    // Page 18
             "OUTPUT",  // OUTPUT, APPEND, and AS are keywords used only by the open file routine.
@@ -135,6 +167,10 @@ namespace OpenSBP {
             int bufIdx = 0;
             if (char.IsLetterOrDigit(inChar) || inChar == ' ' || inChar == '(') {
                 //if (inChar == ' ' || inChar == '(' || inChar == '_') {
+                // do we have a valid function name here?
+                if (functionList.Contains(Identifier.ToUpper().Trim())) {
+                    return false;
+                }
                 // let's see if what we've got so far is an actual keyword...
                 if (keywordList.Contains(Identifier.ToUpper().Trim())) {
                     // we might have a full keyword here.  However, we may only have a partial...
@@ -274,6 +310,7 @@ namespace OpenSBP {
                         case "APPEND": return Token.Append;
                         case "AS": return Token.As;
                         case "WRITE": return Token.WriteFile;
+                        case "ON INPUT": return Token.OnInput;
 
                         case "REM":
                             while (lastChar != '\n') GetChar();

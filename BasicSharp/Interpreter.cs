@@ -16,11 +16,13 @@ namespace OpenSBP {
         private Token lastToken;
 
         private Dictionary<string, Value> vars;
-        private Dictionary<string, Value> sysvars;  // OpenSBP System Variables
+        private Dictionary<string, Value> sysVars;  // OpenSBP System Variables
+        private Dictionary<string, Value> sysConsts;  // OpenSBP constants (used by msgbox, etc)
         private Dictionary<string, Marker> labels;
         private Dictionary<string, Marker> loops;
 
         private Dictionary<int, FileInfo> userFiles;
+        private Dictionary<int, OnInputInfo> inputEvents;
 
 
         public delegate Value BasicFunction(Interpreter interpreter, List<Value> args);
@@ -35,15 +37,18 @@ namespace OpenSBP {
         public Interpreter(string input) {
             this.lex = new Lexer(input);
             this.vars = new Dictionary<string, Value>();
-            this.sysvars = new Dictionary<string, Value>();
+            this.sysVars = new Dictionary<string, Value>();
+            this.sysConsts = new Dictionary<string, Value>();
             this.labels = new Dictionary<string, Marker>();
             this.loops = new Dictionary<string, Marker>();
             this.funcs = new Dictionary<string, BasicFunction>();
             this.userFiles = new Dictionary<int, FileInfo>();
+            this.inputEvents = new Dictionary<int, OnInputInfo>();
 
             this.ifcounter = 0;
             BuiltIns.InstallAll(this);
             InitializeSystemVariables();
+            InitializeOnInputDict();
 
         }
 
@@ -61,8 +66,41 @@ namespace OpenSBP {
             // test entry.
             SetSysVar("%(1)", new Value(4.1250));
 
+            // Now we add system constants...
+
+            // These are used to dicatate what buttons we apply
+            // to dialog boxes created by MsgBox().
+            SetSysConst("OKONLY", new Value(0));
+            SetSysConst("OKCANCEL", new Value(1));
+            SetSysConst("ABORTRETRYIGNORE", new Value(2));
+            SetSysConst("YESNOCANCEL", new Value(3));
+            SetSysConst("YESNO", new Value(4));
+            SetSysConst("RETRYCANCEL", new Value(5));
+
+            // These are used to dictate what icon is applied
+            // to dialog boxes created by MsgBox();
+
+            SetSysConst("CRITICAL", new Value(16));
+            SetSysConst("QUESTION", new Value(32));
+            SetSysConst("EXCLAMATION", new Value(48));
+            SetSysConst("INFORMATION", new Value(64));
         }
 
+        private void InitializeOnInputDict() {
+            // set up the input slots as empty.
+            OnInputInfo inInfo;
+            inInfo.type = EventType.Empty;
+            inInfo.jumpTarget = "";
+            inInfo.assignmentName = "";
+            inInfo.assignmentValue = new Value();
+            inInfo.commandStr = "";
+
+            // TODO No magic numbers!  Max # of inputs needs to come from a config file maybe?
+
+            for (int x = 0; x < 8; x++)
+                inputEvents.Add(x, inInfo);
+
+        }
         private void ProcessFileException(Exception ex) {
             if (ex is ArgumentNullException) {
                 Error("Path is null: " + ex.Message.ToString());
@@ -87,9 +125,9 @@ namespace OpenSBP {
 
         public Value GetVar(string name) {
             if (name.StartsWith("%(")) {
-                if (!sysvars.ContainsKey(name))
+                if (!sysVars.ContainsKey(name))
                     throw new Exception("System Variable " + name + " does not exist.");
-                return sysvars[name];
+                return sysVars[name];
             } else {
                 if (!vars.ContainsKey(name))
                     throw new Exception("Variable with name \"" + name + "\" does not exist.");
@@ -108,10 +146,17 @@ namespace OpenSBP {
         }
 
         public void SetSysVar(string name, Value val) {
-            if (!sysvars.ContainsKey(name))
-                sysvars.Add(name, val);
+            if (!sysVars.ContainsKey(name))
+                sysVars.Add(name, val);
             else
-                sysvars[name] = val;
+                sysVars[name] = val;
+        }
+
+        public void SetSysConst(string name, Value val) {
+            if (!sysConsts.ContainsKey(name))
+                sysConsts.Add(name, val);
+            else
+                sysConsts[name] = val;
         }
 
         public void CloseAllUserFiles() {
@@ -294,6 +339,7 @@ namespace OpenSBP {
                 case Token.OpenFile: OpenUserFile(); break;
                 case Token.Close: CloseUserFile(); break;
                 case Token.WriteFile: WriteToFile(); break;
+                case Token.OnInput: OnInput(); break;
 
                 case Token.Identifer:
                     if (lastToken == Token.Equal) {
@@ -344,6 +390,145 @@ namespace OpenSBP {
             }
         }
 
+        OnInputInfo ClearEvent() {
+            OnInputInfo eventInfo;
+            eventInfo.type = EventType.Empty;
+            eventInfo.jumpTarget = "";
+            eventInfo.assignmentName = "";
+            eventInfo.assignmentValue = new Value();
+            eventInfo.commandStr = "";
+            return eventInfo;
+        }
+        OnInputInfo ConfigEvent(EventType eType, string paramStr) {
+            OnInputInfo eventInfo;
+            switch (eType) {
+                case EventType.JumpTarget:
+                    eventInfo.type = eType;
+                    eventInfo.jumpTarget = paramStr;
+                    eventInfo.assignmentName = "";
+                    eventInfo.assignmentValue = new Value();
+                    eventInfo.commandStr = "";
+                    break;
+                case EventType.Command:
+                    eventInfo.type = eType;
+                    eventInfo.jumpTarget = "";
+                    eventInfo.assignmentName = "";
+                    eventInfo.assignmentValue = new Value();
+                    eventInfo.commandStr = paramStr;
+                    break;
+                default:
+                    eventInfo.type = eType;
+                    eventInfo.jumpTarget = "";
+                    eventInfo.assignmentName = "";
+                    eventInfo.assignmentValue = new Value();
+                    eventInfo.commandStr = "";
+                    Error("Invalid event type specified!");
+                    break;
+            }
+            return (eventInfo);
+        }
+
+        OnInputInfo ConfigEvent(EventType eType, string varName, Value value) {
+            OnInputInfo eventInfo;
+            eventInfo.type = eType;
+            eventInfo.jumpTarget = "";
+            eventInfo.assignmentName = varName;
+            eventInfo.assignmentValue = value;
+            eventInfo.commandStr = "";
+
+            return (eventInfo);
+        }
+
+
+        void OnInput() {
+            // This one is special...
+            // the first part of the command is ON INPUT(sw,ss)
+            // where sw is a switch input an ss is a switch state.
+            // sw can be from 0 to 7.  The max # of inputs can be increased by the firmware, but the ShopBot max is 8.
+            // ss can be from 0 to 3.  The states are:
+            // 0 - Input off
+            // 1 - Input on
+            // 2 - Input off, perform a ramped stop before returning control to the host.
+            // 3 - Input on, perform a ramped stop before returning control to the host.
+            OnInputInfo eventInfo;
+            int inputNum;
+            int inputState;
+
+            string name = lex.Identifier;
+            List<Value> args = new List<Value>();
+            Match(Token.LParen);
+
+        start:
+            if (GetNextToken() != Token.RParen) {
+                args.Add(Expr());
+                if (lastToken == Token.Comma)
+                    goto start;
+            }
+            inputNum = (int)args[0].Real;
+            inputState = (int)args[1].Real;
+            // at this point, the token should be RParen.
+
+            GetNextToken();
+
+            if (lastToken == Token.NewLine) {
+                // if there's nothing after the right paren, we need to clear the specified event.
+                inputEvents[inputNum] = ClearEvent();
+
+                // now we tell the controller to clear that input event.
+                if (!Comms.SendCommand("CLRINT " + inputNum.ToString())) {
+                    Error("Unable to send command to controller!");
+                }
+
+            } else {
+
+                if (lastToken == Token.Identifer) {
+                    name = lex.Identifier;
+                    GetNextToken();
+                    if (lastToken == Token.NewLine) {
+                        // we just record the name of the jump target here.  If or when then 
+                        // input state is met, we'll process it as a "goto" at that point, passing in
+                        // the name of the target to the goto code as if it was a command.
+
+                        inputEvents[inputNum] = ConfigEvent(EventType.JumpTarget, lex.Identifier);
+                        if (!Comms.SendCommand("SETINT " + inputNum.ToString() + " " + inputState.ToString())) {
+                            Error("Unable to send command to controller!");
+                        }
+                        lastToken = Token.NewLine;
+
+                    } else if (lastToken == Token.Equal) {
+                        // we're processing a variable assignment.
+                        GetNextToken();
+                        inputEvents[inputNum] = ConfigEvent(EventType.Assignment, lex.Identifier, lex.Value);
+                        GetNextToken();
+                    } else if (lastToken == Token.Comma) {
+                        if (lex.sbpList.Contains(lex.Identifier)) {
+                            // we're processing a ShopBot command.    
+                            StringBuilder cmdStr = new StringBuilder();
+                            cmdStr.Append(lex.Identifier); // this will be the movement command.
+                            cmdStr.Append(",");
+                            // now we police up the values.  We need to handle both explicit values and variables...
+                            while(GetNextToken() != Token.NewLine) {
+                                if (lastToken == Token.Comma)
+                                    cmdStr.Append(",");
+                                if (lastToken == Token.Identifer)
+                                    cmdStr.Append(vars[lex.Identifier].ToString());
+                                else if (lastToken == Token.Value)
+                                    cmdStr.Append(lex.Value.ToString());
+                            }
+                            Debug.Print("command: " + cmdStr.ToString());
+
+                        }
+                    }
+                }
+
+            }
+            // Check to see if this is a jump target.
+            // if the next token is a newline, it is.
+
+
+            Debug.Print("");
+
+        }
         void OpenUserFile() {
             // TODO a filename like "d:\test.txt" will throw an invalid character exception because
             //      of the single "\" character.  This needs to be handled!
@@ -743,10 +928,12 @@ namespace OpenSBP {
             } else if ((lastToken == Token.Identifer)) {
                 if (vars.ContainsKey(lex.Identifier)) {
                     prim = vars[lex.Identifier];
-                } else if (sysvars.ContainsKey(lex.Identifier)) {
-                    prim = sysvars[lex.Identifier];
-                } else if (funcs.ContainsKey(lex.Identifier)) {
-                    string name = lex.Identifier;
+                } else if (sysVars.ContainsKey(lex.Identifier)) {
+                    prim = sysVars[lex.Identifier];
+                } else if (sysConsts.ContainsKey(lex.Identifier.ToUpper())) {
+                    prim = sysConsts[lex.Identifier.ToUpper()];
+                } else if (funcs.ContainsKey(lex.Identifier.ToLower())) {
+                    string name = lex.Identifier.ToLower();
                     List<Value> args = new List<Value>();
                     GetNextToken();
                     Match(Token.LParen);
@@ -768,8 +955,8 @@ namespace OpenSBP {
                 GetNextToken();
             } else if (lastToken == Token.SystemVar) {
                 // Process the OpenSBP System Variable....
-                if (sysvars.ContainsKey(lex.Identifier)) {
-                    prim = sysvars[lex.Identifier];
+                if (sysVars.ContainsKey(lex.Identifier)) {
+                    prim = sysVars[lex.Identifier];
                 } else if (funcs.ContainsKey(lex.Identifier)) {
                     string name = lex.Identifier;
                     List<Value> args = new List<Value>();

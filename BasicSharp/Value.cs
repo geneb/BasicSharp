@@ -3,7 +3,8 @@
 namespace OpenSBP {
     public enum ValueType {
         Real,
-        String
+        String,
+        Int
     }
 
     public struct Value {
@@ -12,12 +13,17 @@ namespace OpenSBP {
 
         public double Real { get; set; }
         public string String { get; set; }
+        //public int Int { get; set; }
 
         public Value(double real) : this() {
             this.Type = ValueType.Real;
             this.Real = real;
         }
 
+        //public Value(int Int) : this() {
+        //    this.Type = ValueType.Int;
+        //    this.Int = Int;
+        //}
         public Value(string str)
             : this() {
             this.Type = ValueType.String;
@@ -95,7 +101,7 @@ namespace OpenSBP {
 
         public override string ToString() {
             if (this.Type == ValueType.Real)
-                return this.Real.ToString();
+                return this.Real.ToString("#.####"); // TODO did this work as expected?
             return this.String;
         }
     }

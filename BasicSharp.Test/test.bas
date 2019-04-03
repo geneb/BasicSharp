@@ -9,7 +9,9 @@
 print "Starting Tests."  ' end of line remark.
 ' gosub assignment_tests   ' another end of line remark.
 ' gosub file_write_test
-gosub file_read_test
+' gosub file_read_test
+' gosub msgbox_test
+gosub on_input_tests
 
 end
 assignment_tests:
@@ -89,6 +91,39 @@ file_read_test:
 	
 return
 
+msgbox_test:
+'*******************
+'* MsgBox tests*
+'*******************
+print "MsgBox Tests"
+&result = MsgBox("Message Box Text Here", 276, "YesNo")
+print "Result: " + &result
+&result = MsgBox("Message Box Text Here", Critical, "OkCancel")
+print "Result: " + &result
+&result = MsgBox("Message Box Text Here", OkOnly , "OkOnly")
+print "Result: " + &result
+&result = MsgBox("Message Box Text Here", AbortRetryIgnore , "AbortRetryIgnore")
+print "Result: " + &result
+&result = MsgBox("Message Box Text Here", YesNoCancel , "YesNoCancel")
+print "Result: " + &result
+&result = MsgBox("Message Box Text Here", RetryCancel , "RetryCancel")
+print "Result: " + &result
+return
+
+on_input_tests:
+'*******************
+'* ON INPUT tests  *
+'*******************
+&newX = 45.6250
+&newZ = 5.0001
+on input(2,1) jump_target
+on input(3,1) &variable = 5
+on input(4,0) MX, 12.50
+on input(1,1) M2, &newX, 1.1250
+on input(0,3) M3, &newX, 12.4375, &newZ
+jump_target:
+
+return
 
 'print &b + " is the value of &b."
 '&b = &b & " adding more..."

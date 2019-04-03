@@ -7,6 +7,8 @@
         Identifer,
         Value,
         SystemVar,
+        SBCommand,  // ShopBot command of some kind.
+        GMCommand,  // G or M code of some kind.
 
         // Keyword list.  Any changes to this list must also be made to the
         // keywordList list in the Lexer class!
@@ -42,7 +44,7 @@
         InputFile,   // Page 15 - This is the Input keyword used to read data from files.
         InputUser,   // Page 14 - This is the Input keyword used to display a message box and return up to 
                      // ten variables.
-        MsgBox,      // Page 15-17
+        //MsgBox,      // Page 15-17
         OnInput,     // Page 17-18
         OpenFile,    // Page 18
         Pause,       // Page 19-20
