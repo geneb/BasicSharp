@@ -11,7 +11,8 @@ print "Starting Tests."  ' end of line remark.
 ' gosub file_write_test
 ' gosub file_read_test
 ' gosub msgbox_test
-gosub on_input_tests
+'gosub on_input_tests
+gosub pause_tests
 
 end
 assignment_tests:
@@ -114,14 +115,32 @@ on_input_tests:
 '*******************
 '* ON INPUT tests  *
 '*******************
+print "Running ON INPUT tests."
+
 &newX = 45.6250
 &newZ = 5.0001
-on input(2,1) jump_target
+on input(2,1) goto jump_target
 on input(3,1) &variable = 5
 on input(4,0) MX, 12.50
 on input(1,1) M2, &newX, 1.1250
 on input(0,3) M3, &newX, 12.4375, &newZ
+on input(2,1)  ' should reset this input interrupt.
+
 jump_target:
+
+return
+
+pause_tests:
+'*******************
+'* Pause function tests*
+'*******************
+print "Pause function tests."
+Pause
+Pause 10
+Pause "This is a Pause Prompt"
+Pause "This is a pause with a delay" 5
+Pause Until 5,1
+Pause "This is a pause until with a text prompt" Until 3, 0
 
 return
 

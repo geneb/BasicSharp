@@ -52,7 +52,8 @@
         Shell,       // Page 23-24
         WarningOff,  // Page 25
         WriteFile,   // Pages 25-26
-        
+        Until,       // Used by the Pause Until command.
+
         //  These are special registry commands that allow reading/writing to the ShopBot area of the Windows registry.
         //  This should probably be configured to read/write data from an ini file of some sort, as Linux has no "registry".
         SetUsrVal,   // Page 26

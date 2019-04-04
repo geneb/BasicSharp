@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Windows.Forms;
 using System.Diagnostics;
 
 namespace OpenSBP {
@@ -274,6 +275,111 @@ namespace OpenSBP {
             }
 
         }
+
+        public void Pause() {
+            MessageBoxButtons buttons = MessageBoxButtons.OKCancel;
+            if (lastToken == Token.NewLine) // Basic Pause dialog.
+                MessageBox.Show(null, "Continue ?", "Pause in File", buttons);
+
+            if (lastToken == Token.Value) {
+                // this will be either a text prompt or a delay value.
+                if (lex.Value.Type == ValueType.String) {
+                    string dialogText = lex.Value.ToString();
+                    GetNextToken();
+                    if (lastToken == Token.NewLine) {
+                        MessageBox.Show(null, dialogText, "Pause in File", buttons);
+                        //GetNextToken();
+                    } else if (lastToken == Token.Value) {
+                        int delay = (int)lex.Value.Real;  // anything after the pause prompt must be numeric.
+                        GetNextToken();
+                        if (lastToken == Token.NewLine) {
+                            MessageBox.Show(null, dialogText + " delay is " + delay.ToString() + " seconds.",
+                        "Pause in File", buttons);
+                            PauseDialogDelay(dialogText, delay);
+                        }
+                    } else if (lastToken == Token.Until) {
+                        GetNextToken(); // grab the input #
+                        if (lastToken == Token.Value) {
+                            if (lex.Value.Type != ValueType.Real) {
+                                Error("Switch # in PAUSE UNTIL must be numeric!");
+                            }
+                            int switchNum = (int)lex.Value.Real;
+                            GetNextToken();
+                            if (lastToken == Token.Comma) {
+                                GetNextToken();
+                                if (lastToken == Token.Value) {
+                                    if (lex.Value.Type != ValueType.Real) {
+                                        Error("Input state must be numeric!");
+                                    }
+                                    int switchState = (int)lex.Value.Real;
+                                    //MessageBox.Show(null, String.Format("Switch {0}, State {1}.\n{2}", switchNum, switchState, dialogText), "Pause in File", buttons);
+                                    PauseUntil(dialogText, switchNum, switchState);
+                                    GetNextToken();
+                                }
+                            }
+                        } else {
+                            Error("Switch # is required in PAUSE UNTIL.");
+                        }
+                    }
+                } else if (lex.Value.Type == ValueType.Real) {
+                    // we've got a delay here and then the dialog will auto-dimiss.
+                    int delay = (int)lex.Value.Real;
+                    //MessageBox.Show(null, "We're pretending this will dismiss after " + delay.ToString() + " seconds.",
+                    //    "Pause in File", buttons);
+                    PauseDialogDelay(String.Format("Pausing for {0} seconds.", delay), delay);
+                    GetNextToken();
+                }
+            } else if (lastToken == Token.Until) {
+                // we've got a PAUSE UNTIL command here...
+                // because lastToken is the Until keyword, we know there's no text prompt for this and we bring up a generic 
+                // prompt...
+                GetNextToken(); // grab the input #
+                if (lastToken == Token.Value) {
+                    if (lex.Value.Type != ValueType.Real) {
+                        Error("Switch # in PAUSE UNTIL must be numeric!");
+                    }
+                    int switchNum = (int)lex.Value.Real;
+                    GetNextToken(); 
+                    if (lastToken == Token.Comma) {
+                        GetNextToken();
+                        if (lastToken == Token.Value) {
+                            if (lex.Value.Type != ValueType.Real) {
+                                Error("Input state must be numeric!");
+                            }
+                            int switchState = (int)lex.Value.Real;
+                            Debug.Print("Switch {0}, State {1}.", switchNum, switchState);
+                            MessageBox.Show(null, String.Format("Pausing for switch #{0} to be {1}.", switchNum, (switchState == 1) ? "On" : "Off"), "Pause in File", buttons);
+                            GetNextToken();
+                            PauseUntil(String.Format("Pausing for switch #{0} to be {1}.", switchNum, (switchState == 1) ? "On" : "Off"),
+                                switchNum, switchState);
+                        }
+                    }
+                } else {
+                    Error("Switch # is required in PAUSE UNTIL.");
+                }
+            }
+        }
+
+        void PauseDialogDelay(string textPrompt, int delaySecs) {
+            // TODO This needs to throw a dialog box up with the message of
+            //      textPrompt and self-dismiss after delaySecs has elapsed.
+            //
+        }
+
+        void PauseUntil(string textPrompt, int switchNum, int switchState) {
+            // TODO This needs to do a number of things...
+            // 1. Throw up a dialog box that shows the textPrompt value as well as
+            //    an OK button and a Quit button.  The Quit button needs to terminate the whole program.
+            // 2. It needs to check the controller to see if switchNum is already in switchState.
+            //    if it is, then it needs to throw a dialog at the user about this error, or 
+            //    crash the program as if it were a syntax error.
+            // 3. If the switchState is not already indicated, then it needs to continually peek at the
+            //    incoming data stream from the controller to see if switchNum has changed to inputState.
+            //    if it has, then it needs to safely resume program operation (see Page 20 of the SBP Handbook),
+            //    unless the SW [Set Warning] duration is zero.
+
+        }
+
         public void AddFunction(string name, BasicFunction function) {
             if (!funcs.ContainsKey(name)) funcs.Add(name, function);
             else funcs[name] = function;
@@ -340,6 +446,7 @@ namespace OpenSBP {
                 case Token.Close: CloseUserFile(); break;
                 case Token.WriteFile: WriteToFile(); break;
                 case Token.OnInput: OnInput(); break;
+                case Token.Pause: Pause(); break;
 
                 case Token.Identifer:
                     if (lastToken == Token.Equal) {
@@ -480,7 +587,9 @@ namespace OpenSBP {
                 }
 
             } else {
-
+                if (lastToken == Token.Goto) {
+                    GetNextToken();  // this should give us the jump target.
+                }
                 if (lastToken == Token.Identifer) {
                     name = lex.Identifier;
                     GetNextToken();
@@ -515,19 +624,12 @@ namespace OpenSBP {
                                 else if (lastToken == Token.Value)
                                     cmdStr.Append(lex.Value.ToString());
                             }
-                            Debug.Print("command: " + cmdStr.ToString());
-
+                            inputEvents[inputNum] = ConfigEvent(EventType.Command, cmdStr.ToString());
                         }
                     }
                 }
 
             }
-            // Check to see if this is a jump target.
-            // if the next token is a newline, it is.
-
-
-            Debug.Print("");
-
         }
         void OpenUserFile() {
             // TODO a filename like "d:\test.txt" will throw an invalid character exception because

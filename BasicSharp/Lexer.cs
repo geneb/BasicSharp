@@ -74,14 +74,14 @@ namespace OpenSBP {
             "ON INPUT",     // Page 17-18
             "OPEN",    // Page 18
             "OUTPUT",  // OUTPUT, APPEND, and AS are keywords used only by the open file routine.
-            "APPEND",  
+            "APPEND",
             "AS",
             "PAUSE",       // Page 19-20
             "PLAY",        // Page 20-21
             "SHELL",       // Page 23-24
             "WARNING OFF",  // Page 25
             "WRITE",   // Pages 25-26
-        
+            "UNTIL",       // Used by the Pause Until command.
             //  These are special registry commands that allow reading/writing to the ShopBot area of the Windows registry.
             //  This should probably be configured to read/write data from an ini file of some sort, as Linux has no "registry".
             "SETUSRVAL",        // Page 26
@@ -173,9 +173,18 @@ namespace OpenSBP {
                 }
                 // let's see if what we've got so far is an actual keyword...
                 if (keywordList.Contains(Identifier.ToUpper().Trim())) {
-                    // we might have a full keyword here.  However, we may only have a partial...
-                    // we need to peek ahead in the source code buffer to see if we've got a 
+                    // we might have a full keyword here.  However, we may only have a partial, or 
+                    // it may be part of an identifier that starts with the letters of a valid keyword.
+                    // we also may need to peek ahead in the source code buffer to see if we've got a 
                     // two word keyword here.  (ex. end if, on input, etc...)
+                    // First, let's check to see if we've got an identifier that might accidentally match
+                    // a valid keyword. The simplest way to check for that is to see if the current character 
+                    // is a space or not.  If it isn't, then it's highly likely we've got an identifier here,
+                    // and not an actual keyword.
+
+                    if (source[sourceMarker.Pointer] != ' ' && source[sourceMarker.Pointer] != '(') {
+                        return true;
+                    }
                     string validKeyword = Identifier + " ";
                     bufIdx = 1;
                     if (sourceMarker.Pointer + bufMax > source.Length) {
@@ -196,7 +205,6 @@ namespace OpenSBP {
                         } else {
                             break;
                         }
-
                     }
                     if (keywordList.Contains(validKeyword.ToUpper())) {
                         // make the Identifier the valid keyword we just built...
@@ -248,9 +256,6 @@ namespace OpenSBP {
                     }
                     return true;
                 }
-                //} else {
-                //    return true;
-                //}
             } else if (inChar == '_') {
                 // underscores are permitted.
                 return true;
@@ -311,6 +316,8 @@ namespace OpenSBP {
                         case "AS": return Token.As;
                         case "WRITE": return Token.WriteFile;
                         case "ON INPUT": return Token.OnInput;
+                        case "PAUSE": return Token.Pause;
+                        case "UNTIL": return Token.Until;
 
                         case "REM":
                             while (lastChar != '\n') GetChar();
