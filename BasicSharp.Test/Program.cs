@@ -11,6 +11,8 @@ namespace OpenSBP.Test {
                 fileName = fDialog.FileName;
                 fDialog.Dispose();
                 Interpreter basic = new Interpreter(File.ReadAllText(fileName));
+                basic.StandAlone = true;  // prevents console redirect ops.
+
                 try {
                     Console.WriteLine("OpenSBPCore Intepreter Start.");
                     Console.WriteLine("----------------------------\n");

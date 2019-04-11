@@ -4,7 +4,7 @@ namespace OpenSBP {
     public enum ValueType {
         Real,
         String,
-        Int
+        //Int
     }
 
     public struct Value {
@@ -78,14 +78,11 @@ namespace OpenSBP {
                     return new Value(a.Real == b.Real ? 0 : 1);
                 else
                     return new Value(a.String == b.String ? 0 : 1);
-            } else if (tok == Token.Comma) {
-                    return new Value("     " + b.String);
             } else {
                 if (a.Type == ValueType.String)
                     throw new Exception("Cannot do binop on strings(except +).");  //TODO Needs more detail.
 
                 switch (tok) {
-                    // TODO this area may be a good place to parse the extended OpenSBP operations.
                     case Token.Minus: return new Value(a.Real - b.Real);
                     case Token.Asterisk: return new Value(a.Real * b.Real);
                     case Token.Slash: return new Value(a.Real / b.Real);

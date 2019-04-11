@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Text;
 using System.Collections.Generic;
 
 namespace OpenSBP {
@@ -41,6 +42,7 @@ namespace OpenSBP {
             "MS"
 
         };
+
         private List<string> keywordList = new List<string>() {
             // If any changes are made to this list of keywords, the 
             // Token enum in Token.cs must be updated as well!
@@ -110,6 +112,15 @@ namespace OpenSBP {
         public Marker TokenMarker { get; set; }
 
         public string Identifier { get; set; }
+
+        public string CommentLine { get; set; }
+        // CommentLine is present soley to be potentially consumed by
+        // the Pause command.  The original ShopBot docs dictate that the
+        // prompt for the Pause dialog occurs on the prior line as a comment, ex:
+        // ' This is the dialog text
+        // Pause
+        // would result in a pause dialog with the text "This is the dialog text" displayed.
+        // No idea why this was done.
 
         public bool StrictMode { get; set; }
 
@@ -320,7 +331,7 @@ namespace OpenSBP {
                         case "UNTIL": return Token.Until;
 
                         case "REM":
-                            while (lastChar != '\n') GetChar();
+                            ProcessComment();
                             GetChar();
                             return GetToken();
                         case "STRICT ON": return Token.StrictOn;
@@ -355,6 +366,8 @@ namespace OpenSBP {
             }
 
             Token tok = Token.Unknown;
+            if (lastChar != '\n' && lastChar != '\'')
+                CommentLine = "";
             switch (lastChar) {
                 case '\n': tok = Token.NewLine; break;
                 case ':': tok = Token.Colon; break;
@@ -370,10 +383,8 @@ namespace OpenSBP {
                 case '(': tok = Token.LParen; break;
                 case ')': tok = Token.RParen; break;
                 case '\'': // Handles single char REM statement.
-                    while (lastChar != '\n') GetChar();
-                    //GetChar(); This GetChar() call was resulting in an error if the
-                    //           comment was placed at the end of a normal program line,
-                    //           and was NOT separated from the normal statement with a colon.
+                    ProcessComment();  // New code to handle Pause/Pause Until prompts.
+                    //while (lastChar != '\n') GetChar();
                     return GetToken();
 
                 case '<':
@@ -411,6 +422,23 @@ namespace OpenSBP {
             GetChar();
             return tok;
         }
+
+        private void ProcessComment() {
+            CommentLine = "";  // clear the prior comment we've stored.
+            if (sourceMarker.Column <= 3) {
+                // If we've got a comment that starts in column #3 or less, it's a "full line"
+                // comment and is thus eligible to be used as fodder for the Pause and
+                // Pause Until commands.
+                StringBuilder tempStr = new StringBuilder();
+                while (lastChar != '\n')
+                    tempStr.Append(GetChar());
+                CommentLine = tempStr.ToString();
+            } else {
+                while (lastChar != '\n')
+                    GetChar();
+            }
+        }
+
     }
 }
 

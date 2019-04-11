@@ -24,16 +24,19 @@ namespace OpenSBP {
 
         private Dictionary<int, FileInfo> userFiles;
         private Dictionary<int, OnInputInfo> inputEvents;
-
+        private Dictionary<string, BasicFunction> funcs;
 
         public delegate Value BasicFunction(Interpreter interpreter, List<Value> args);
-        private Dictionary<string, BasicFunction> funcs;
 
         private int ifcounter;
 
         private Marker lineMarker;
 
         private bool exit;
+
+        public bool StandAlone { get; set; }
+
+        public System.Windows.Forms.TextBox OutputWindow;
 
         public Interpreter(string input) {
             this.lex = new Lexer(input);
@@ -278,9 +281,13 @@ namespace OpenSBP {
 
         public void Pause() {
             MessageBoxButtons buttons = MessageBoxButtons.OKCancel;
-            if (lastToken == Token.NewLine) // Basic Pause dialog.
-                MessageBox.Show(null, "Continue ?", "Pause in File", buttons);
-
+            if (lastToken == Token.NewLine) { // Basic Pause dialog.
+                string dialogText = "Continue ?";
+                if (lex.CommentLine != "") {
+                    dialogText = lex.CommentLine;
+                }
+                MessageBox.Show(null, dialogText, "Pause in File", buttons);
+            }
             if (lastToken == Token.Value) {
                 // this will be either a text prompt or a delay value.
                 if (lex.Value.Type == ValueType.String) {
@@ -339,7 +346,7 @@ namespace OpenSBP {
                         Error("Switch # in PAUSE UNTIL must be numeric!");
                     }
                     int switchNum = (int)lex.Value.Real;
-                    GetNextToken(); 
+                    GetNextToken();
                     if (lastToken == Token.Comma) {
                         GetNextToken();
                         if (lastToken == Token.Value) {
@@ -401,7 +408,7 @@ namespace OpenSBP {
                 Line();
         }
 
-        Token GetNextToken() {
+        public Token GetNextToken() {
             prevToken = lastToken;
             lastToken = lex.GetToken();
 
@@ -411,7 +418,7 @@ namespace OpenSBP {
             return lastToken;
         }
 
-        void Line() {
+        public void Line() {
             while (lastToken == Token.NewLine) GetNextToken();
 
             if (lastToken == Token.EOF) {
@@ -557,15 +564,15 @@ namespace OpenSBP {
             // 1 - Input on
             // 2 - Input off, perform a ramped stop before returning control to the host.
             // 3 - Input on, perform a ramped stop before returning control to the host.
-            OnInputInfo eventInfo;
+            //OnInputInfo eventInfo;
             int inputNum;
             int inputState;
 
-            string name = lex.Identifier;
+            // string name = lex.Identifier;
             List<Value> args = new List<Value>();
             Match(Token.LParen);
 
-        start:
+            start:
             if (GetNextToken() != Token.RParen) {
                 args.Add(Expr());
                 if (lastToken == Token.Comma)
@@ -591,7 +598,7 @@ namespace OpenSBP {
                     GetNextToken();  // this should give us the jump target.
                 }
                 if (lastToken == Token.Identifer) {
-                    name = lex.Identifier;
+                    //name = lex.Identifier;
                     GetNextToken();
                     if (lastToken == Token.NewLine) {
                         // we just record the name of the jump target here.  If or when then 
@@ -616,7 +623,7 @@ namespace OpenSBP {
                             cmdStr.Append(lex.Identifier); // this will be the movement command.
                             cmdStr.Append(",");
                             // now we police up the values.  We need to handle both explicit values and variables...
-                            while(GetNextToken() != Token.NewLine) {
+                            while (GetNextToken() != Token.NewLine) {
                                 if (lastToken == Token.Comma)
                                     cmdStr.Append(",");
                                 if (lastToken == Token.Identifer)
@@ -665,7 +672,54 @@ namespace OpenSBP {
         }
 
         void Print() {
-            Console.WriteLine(Expr().ToString());
+            //Console.WriteLine(Expr().ToString());
+            StringBuilder outputStr = new StringBuilder();
+
+            while (lastToken != Token.NewLine) {
+                switch (lastToken) {
+                    // if the token is a comma, we write out 5 spaces between chunks that we get.
+                    // if the token is a semicolon, we treat it the same as a "+" (or "&")
+                    // if the last token is a newline and the prevtoken is a semicolon,
+                    // we need to not write a cr/lf at the end of the line as we finish.
+                    case Token.Comma: {
+                            if (lastToken == Token.Comma)
+                                outputStr.Append("     ");
+
+                            GetNextToken();
+                            if (lastToken == Token.Value || lastToken == Token.Identifer) {
+                                outputStr.Append(Expr().ToString());
+
+                                if (lastToken == Token.Comma)
+                                    outputStr.Append("     ");
+
+                                if (lastToken != Token.NewLine)
+                                    GetNextToken();
+                            }
+                            break;
+                        }
+                    case Token.Identifer:
+                    case Token.Value: // might work?
+                        outputStr.Append(Expr().ToString());
+                        break;
+                    case Token.Semicolon:
+
+                        GetNextToken();
+                        break;
+                    default:
+                        Error("I don't know what to do with Token." + lastToken.ToString());
+                        break;
+                }
+
+            }
+            if (OutputWindow == null) {
+            }
+
+            if (prevToken == Token.Identifer) {
+                Console.WriteLine(outputStr.ToString());
+            } else if (prevToken == Token.Semicolon) {
+                Console.Write(outputStr.ToString());
+            } else if (prevToken == Token.Value)
+                Console.WriteLine(outputStr.ToString());
         }
 
         void ReadFromFile() {
@@ -990,13 +1044,13 @@ namespace OpenSBP {
         }
 
         Value Expr(int min = 0) {
-            Dictionary<Token, int> precedens = new Dictionary<Token, int>()
+            Dictionary<Token, int> precedence = new Dictionary<Token, int>()
             {
                 { Token.Or, 0 }, { Token.And, 0 },
                 { Token.Equal, 1 }, { Token.NotEqual, 1 },
                 { Token.Less, 1 }, { Token.More, 1 },
                 { Token.LessEqual, 1 },  { Token.MoreEqual, 1 },
-                { Token.Plus, 2 }, { Token.Minus, 2 }, {Token.Ampersand, 2},
+                { Token.Plus, 2 }, { Token.Minus, 2 }, {Token.Ampersand, 2}, /* { Token.Comma, 2 }, */
                 { Token.Asterisk, 3 }, {Token.Slash, 3 },
                 { Token.Caret, 4 }
             };
@@ -1007,12 +1061,15 @@ namespace OpenSBP {
                 // When the string concat operator & is being used, we need to treat it as much as the + operator as we can.
 
                 if ((lastToken < Token.Plus && lastToken < Token.Ampersand) ||
-                    (lastToken < Token.Ampersand) || lastToken > Token.And || precedens[lastToken] < min)
+                    (lastToken < Token.Ampersand) || lastToken > Token.And || precedence[lastToken] < min)
                     break;
+
                 Token op = lastToken;
-                int prec = precedens[lastToken];
+                int prec = precedence[lastToken];
+
                 int assoc = 0; // 0 left, 1 right
                 int nextmin = assoc == 0 ? prec : prec + 1;
+
                 GetNextToken();
                 Value rhs = Expr(nextmin);
                 lhs = lhs.BinOp(rhs, op);
@@ -1040,7 +1097,7 @@ namespace OpenSBP {
                     GetNextToken();
                     Match(Token.LParen);
 
-                start:
+                    start:
                     if (GetNextToken() != Token.RParen) {
                         args.Add(Expr());
                         if (lastToken == Token.Comma)
@@ -1065,7 +1122,7 @@ namespace OpenSBP {
                     GetNextToken();
                     Match(Token.LParen);
 
-                start:
+                    start:
                     if (GetNextToken() != Token.RParen) {
                         args.Add(Expr());
                         if (lastToken == Token.Comma)

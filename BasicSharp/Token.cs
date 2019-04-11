@@ -70,11 +70,11 @@
         NewLine,
         Colon,
         Semicolon,
-        Comma,
-
+        Comma, 
         Ampersand,  // OpenSBP uses "&" for string concatenation.
         Plus,
         Minus,
+        // Comma,
         Slash,
         Asterisk,
         Caret,

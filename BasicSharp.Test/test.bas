@@ -1,3 +1,4 @@
+REM testing
 ' *******************************************************
 ' * This program is designed to test out all the various
 ' * OpenSBP language features.
@@ -10,9 +11,12 @@ print "Starting Tests."  ' end of line remark.
 ' gosub assignment_tests   ' another end of line remark.
 ' gosub file_write_test
 ' gosub file_read_test
-' gosub msgbox_test
-'gosub on_input_tests
-gosub pause_tests
+ gosub msgbox_test
+ 'gosub on_input_tests
+ 'gosub pause_tests
+ 'gosub print_tests
+
+print "Test run completed."
 
 end
 assignment_tests:
@@ -109,6 +113,8 @@ print "Result: " + &result
 print "Result: " + &result
 &result = MsgBox("Message Box Text Here", RetryCancel , "RetryCancel")
 print "Result: " + &result
+Msgbox("Special test with no explict return value", OkOnly, "Special Dialog"
+
 return
 
 on_input_tests:
@@ -137,12 +143,33 @@ pause_tests:
 print "Pause function tests."
 Pause
 Pause 10
+' This is a Pause comment embedded in a comment.
+Pause
 Pause "This is a Pause Prompt"
 Pause "This is a pause with a delay" 5
 Pause Until 5,1
 Pause "This is a pause until with a text prompt" Until 3, 0
 
 return
+print_tests:
+'*******************
+'* Print tests*
+'*******************
+Print "Running Print tests."
+&testVar = 5
+print "&testVar ", &testVar
+&col1 = "C1"
+&col2 = "C2"
+&col3 = "C3"
+print "Columns: "; &col1, &col2, &col3;
+print "...and continue on the same line."
+print "5 + 5 = "; 5 + 5
+&v1 = 50
+&v2 = 5
+print &v1; " + "; &v2 ; " = "; &v1 + &v2
+
+return
+
 
 'print &b + " is the value of &b."
 '&b = &b & " adding more..."
