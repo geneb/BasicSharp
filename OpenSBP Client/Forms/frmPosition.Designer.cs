@@ -528,7 +528,7 @@
             // 
             this.label17.AutoEllipsis = true;
             this.label17.ForeColor = System.Drawing.Color.White;
-            this.label17.Location = new System.Drawing.Point(140, 11);
+            this.label17.Location = new System.Drawing.Point(140, 20);
             this.label17.Name = "label17";
             this.label17.Size = new System.Drawing.Size(20, 20);
             this.label17.TabIndex = 40;
@@ -539,7 +539,7 @@
             // 
             this.label18.AutoEllipsis = true;
             this.label18.ForeColor = System.Drawing.Color.White;
-            this.label18.Location = new System.Drawing.Point(165, 11);
+            this.label18.Location = new System.Drawing.Point(165, 20);
             this.label18.Name = "label18";
             this.label18.Size = new System.Drawing.Size(20, 20);
             this.label18.TabIndex = 39;
@@ -550,7 +550,7 @@
             // 
             this.label19.AutoEllipsis = true;
             this.label19.ForeColor = System.Drawing.Color.White;
-            this.label19.Location = new System.Drawing.Point(191, 11);
+            this.label19.Location = new System.Drawing.Point(191, 20);
             this.label19.Name = "label19";
             this.label19.Size = new System.Drawing.Size(20, 20);
             this.label19.TabIndex = 38;
@@ -561,7 +561,7 @@
             // 
             this.label20.AutoEllipsis = true;
             this.label20.ForeColor = System.Drawing.Color.White;
-            this.label20.Location = new System.Drawing.Point(62, 11);
+            this.label20.Location = new System.Drawing.Point(62, 20);
             this.label20.Name = "label20";
             this.label20.Size = new System.Drawing.Size(20, 20);
             this.label20.TabIndex = 37;
@@ -572,7 +572,7 @@
             // 
             this.label21.AutoEllipsis = true;
             this.label21.ForeColor = System.Drawing.Color.White;
-            this.label21.Location = new System.Drawing.Point(88, 11);
+            this.label21.Location = new System.Drawing.Point(88, 20);
             this.label21.Name = "label21";
             this.label21.Size = new System.Drawing.Size(20, 20);
             this.label21.TabIndex = 36;
@@ -583,7 +583,7 @@
             // 
             this.label22.AutoEllipsis = true;
             this.label22.ForeColor = System.Drawing.Color.White;
-            this.label22.Location = new System.Drawing.Point(114, 11);
+            this.label22.Location = new System.Drawing.Point(114, 20);
             this.label22.Name = "label22";
             this.label22.Size = new System.Drawing.Size(20, 20);
             this.label22.TabIndex = 35;
@@ -594,7 +594,7 @@
             // 
             this.label23.AutoEllipsis = true;
             this.label23.ForeColor = System.Drawing.Color.White;
-            this.label23.Location = new System.Drawing.Point(36, 11);
+            this.label23.Location = new System.Drawing.Point(36, 20);
             this.label23.Name = "label23";
             this.label23.Size = new System.Drawing.Size(20, 20);
             this.label23.TabIndex = 34;
@@ -605,7 +605,7 @@
             // 
             this.label24.AutoEllipsis = true;
             this.label24.ForeColor = System.Drawing.Color.White;
-            this.label24.Location = new System.Drawing.Point(9, 11);
+            this.label24.Location = new System.Drawing.Point(9, 20);
             this.label24.Name = "label24";
             this.label24.Size = new System.Drawing.Size(20, 20);
             this.label24.TabIndex = 33;
@@ -614,7 +614,7 @@
             // 
             // ledOutput6
             // 
-            this.ledOutput6.Location = new System.Drawing.Point(140, 34);
+            this.ledOutput6.Location = new System.Drawing.Point(140, 43);
             this.ledOutput6.Name = "ledOutput6";
             this.ledOutput6.On = true;
             this.ledOutput6.Size = new System.Drawing.Size(20, 20);
@@ -623,7 +623,7 @@
             // 
             // ledOutput7
             // 
-            this.ledOutput7.Location = new System.Drawing.Point(166, 34);
+            this.ledOutput7.Location = new System.Drawing.Point(166, 43);
             this.ledOutput7.Name = "ledOutput7";
             this.ledOutput7.On = true;
             this.ledOutput7.Size = new System.Drawing.Size(20, 20);
@@ -632,7 +632,7 @@
             // 
             // ledOutput8
             // 
-            this.ledOutput8.Location = new System.Drawing.Point(191, 34);
+            this.ledOutput8.Location = new System.Drawing.Point(191, 43);
             this.ledOutput8.Name = "ledOutput8";
             this.ledOutput8.On = true;
             this.ledOutput8.Size = new System.Drawing.Size(20, 20);
@@ -641,7 +641,7 @@
             // 
             // ledOutput5
             // 
-            this.ledOutput5.Location = new System.Drawing.Point(114, 34);
+            this.ledOutput5.Location = new System.Drawing.Point(114, 43);
             this.ledOutput5.Name = "ledOutput5";
             this.ledOutput5.On = true;
             this.ledOutput5.Size = new System.Drawing.Size(20, 20);
@@ -650,7 +650,7 @@
             // 
             // ledOutput4
             // 
-            this.ledOutput4.Location = new System.Drawing.Point(88, 34);
+            this.ledOutput4.Location = new System.Drawing.Point(88, 43);
             this.ledOutput4.Name = "ledOutput4";
             this.ledOutput4.On = true;
             this.ledOutput4.Size = new System.Drawing.Size(20, 20);
@@ -659,7 +659,7 @@
             // 
             // ledOutput3
             // 
-            this.ledOutput3.Location = new System.Drawing.Point(62, 34);
+            this.ledOutput3.Location = new System.Drawing.Point(62, 43);
             this.ledOutput3.Name = "ledOutput3";
             this.ledOutput3.On = true;
             this.ledOutput3.Size = new System.Drawing.Size(20, 20);
@@ -668,7 +668,7 @@
             // 
             // ledOutput2
             // 
-            this.ledOutput2.Location = new System.Drawing.Point(36, 34);
+            this.ledOutput2.Location = new System.Drawing.Point(36, 43);
             this.ledOutput2.Name = "ledOutput2";
             this.ledOutput2.On = true;
             this.ledOutput2.Size = new System.Drawing.Size(20, 20);
@@ -677,7 +677,7 @@
             // 
             // ledOutput1
             // 
-            this.ledOutput1.Location = new System.Drawing.Point(10, 34);
+            this.ledOutput1.Location = new System.Drawing.Point(10, 43);
             this.ledOutput1.Name = "ledOutput1";
             this.ledOutput1.On = true;
             this.ledOutput1.Size = new System.Drawing.Size(20, 20);

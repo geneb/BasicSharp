@@ -22,3 +22,4 @@ The OpenSBP Client software uses the following custom controls:
 
 LEDBulb by Steve Marsh: (CPOL License) https://www.codeproject.com/Articles/114122/A-Simple-Vector-Based-LED-User-Control
 SevenSegment by Dmitry Brant https://github.com/dbrant/SevenSegment
+ToggleSwitch by Johnny J. (CPOL License) https://www.codeproject.com/Articles/1029499/ToggleSwitch-Winforms-Control

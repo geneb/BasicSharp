@@ -15,10 +15,16 @@ namespace OpenSBP_Client.Forms {
 
         public frmOutputWindow() {
             InitializeComponent();
+            OutputWindow = txtOutput;
         }
 
         private void FrmOutputWindow_Load(object sender, EventArgs e) {
-            OutputWindow = txtOutput;
+            //OutputWindow = txtOutput;
+        }
+
+        private void FrmOutputWindow_TextChanged(object sender, EventArgs e) {
+            if (!this.Visible)
+                this.Show();
         }
     }
 }

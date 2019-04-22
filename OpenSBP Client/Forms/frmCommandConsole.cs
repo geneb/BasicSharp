@@ -139,7 +139,7 @@ namespace OpenSBP_Client {
             fileData = File.ReadAllText(fileName);
             // we need to stuff this into the program display...
             StringBuilder strBuf = new StringBuilder();
-            foreach( char ch in fileData) {
+            foreach (char ch in fileData) {
                 if (ch != '\r' && ch != '\n')
                     strBuf.Append(ch);
                 if (ch == '\n') {
@@ -150,19 +150,37 @@ namespace OpenSBP_Client {
 
             sbProg = new Interpreter(fileData);
             sbProg.StandAlone = false; // enables console output redirect to our OutputWindow
+            OutputWindow = new frmOutputWindow();
             sbProg.OutputWindow = OutputWindow.OutputWindow;
+            OutputWindow.Show();
             // configure the redirect!
             Console.SetOut(new TextBoxWriter(OutputWindow.OutputWindow));
-
             return true;
         }
 
         public void RunSBProgram() {
-            bool exit = false;
-                sbProg.GetNextToken();
-                while (!exit)
-                    sbProg.Line();
+            bool lineOk = true;
+            Tuple<bool, int> retVals;
+            int lineIndex = 0;
+            sbProg.GetNextToken();
+            
+            while (lineOk) {
+                // TODO single step mode code will go here. 
+                lstProgram.SetSelected(lineIndex, false);
+                retVals = sbProg.Line();
+                lineOk = retVals.Item1;
+                lineIndex = retVals.Item2;
+                if (lineIndex > 0 && lineIndex <= lstProgram.Items.Count) {
+                    lstProgram.SetSelected(lineIndex, true);
+                }
+                if (sbProg.exitState)
+                    lineOk = false;
+                //MessageBox.Show("donk");
+            }
+        }
 
+        private void EXitToolStripMenuItem_Click(object sender, EventArgs e) {
+            Application.Exit();
         }
     }
 }

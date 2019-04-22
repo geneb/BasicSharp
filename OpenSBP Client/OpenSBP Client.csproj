@@ -102,6 +102,12 @@
     <Compile Include="Forms\frmPosition.Designer.cs">
       <DependentUpon>frmPosition.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\frmSingleStep.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmSingleStep.Designer.cs">
+      <DependentUpon>frmSingleStep.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TextBoxWriter.cs" />
@@ -116,6 +122,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\frmPosition.resx">
       <DependentUpon>frmPosition.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\frmSingleStep.resx">
+      <DependentUpon>frmSingleStep.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

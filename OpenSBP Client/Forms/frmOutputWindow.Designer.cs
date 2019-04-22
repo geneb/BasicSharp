@@ -34,9 +34,8 @@
             this.txtOutput.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
             this.txtOutput.Multiline = true;
             this.txtOutput.Name = "txtOutput";
-            this.txtOutput.ReadOnly = true;
             this.txtOutput.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.txtOutput.Size = new System.Drawing.Size(479, 743);
+            this.txtOutput.Size = new System.Drawing.Size(811, 549);
             this.txtOutput.TabIndex = 0;
             this.txtOutput.WordWrap = false;
             // 
@@ -44,16 +43,17 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 19F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(479, 743);
+            this.ClientSize = new System.Drawing.Size(811, 549);
             this.Controls.Add(this.txtOutput);
             this.Font = new System.Drawing.Font("Monospac821 BT", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
             this.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "frmOutputWindow";
             this.Text = "Output Window";
             this.Load += new System.EventHandler(this.FrmOutputWindow_Load);
+            this.TextChanged += new System.EventHandler(this.FrmOutputWindow_TextChanged);
             this.ResumeLayout(false);
             this.PerformLayout();
 

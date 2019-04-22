@@ -49,7 +49,7 @@ file_write_test:
 '**************************
 print "File Create/Write Tests"
 
-	open "test.file" for output as #1 ' append works too!
+	open "d:\\test.file" for output as #1 ' append works too!
 	&test = "test variable |"
 	write #1, "This is some data", "and more data", &test;
 	&a = "data1"
@@ -113,7 +113,6 @@ print "Result: " + &result
 print "Result: " + &result
 &result = MsgBox("Message Box Text Here", RetryCancel , "RetryCancel")
 print "Result: " + &result
-Msgbox("Special test with no explict return value", OkOnly, "Special Dialog"
 
 return
 

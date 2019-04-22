@@ -12,13 +12,15 @@ namespace OpenSBP_Client {
     // http://csharphelper.com/blog/2018/08/redirect-console-window-output-to-a-textbox-in-c/
     public class TextBoxWriter : TextWriter {
         // The control where we will write text.
-        private Control MyControl;
-        public TextBoxWriter(Control control) {
-            MyControl = control;
+        private TextBox MyControl;
+        public TextBoxWriter(TextBox txtOutput) {
+            MyControl = txtOutput;
         }
 
         public override void Write(char value) {
-            MyControl.Text += value;
+            //MyControl.Text += value;
+            base.Write(value);
+            MyControl.AppendText(value.ToString());
         }
 
         public override void Write(string value) {

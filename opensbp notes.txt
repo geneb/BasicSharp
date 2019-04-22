@@ -1,0 +1,45 @@
+Notes based on the review of:
+http://www.shopbottools.com/ShopBotDocs/files/SBG%2000142%20User%20Guide%2020150317.pdf
+
+1.  Spacebar should stop any motion.
+    The "Start" buttton on the position window becomes a "Stop" button while the tool
+    is in motion.  It should respond to the spacebar as if it was clicked on.
+   
+2.  Software settings should be stored in opensbp.ini - it's the equivalent to the
+    shopbot.ini file.  See how [UR] works in order to cause the .ini file to be 
+    created.
+   
+3.  Check position window on sb3 for an absolute/relative position flag as well as absolute/relativ
+    control for it.
+   
+4.  The Preview window is normally only visible when the software is in Preview mode.
+    This should be user-controllable as to whether or not they want to see the Preview
+    window while the tool is running.
+   
+5.  ESC should close any Fill-In dialogs.  If ESC is hit while there's no Fil-In window
+    open, it should prompt to close the application.
+
+6.  Parameter Line Calculator - see PDF page #12 in the SB user guide...  This feature
+    is going to be a fun one...
+   
+7.  The [UU] Calculator can be triggered by F10.  See "Drop-Down Calculator" in the linked
+    doc for more context/info.
+
+8.  Most commands will trigger a Fill-In sheet that's relevant to the command being entered.
+    See "Fill-In Sheets".
+   
+9.  Keyboard Recording: See PDF page 26, "Automatic Recording of Things You Do at the Keyboard"
+
+10. [FP] command should probably be pre-processd in order to load the .sbp file into the same 
+    text stream we're feeding the interpreter.
+	
+11. Input Switches.. #s 2, 3, and 4 are reserved.  2 & 3 are for limit switches, #4 is 
+    a soft "stop" input - it reacts the same as hitting the spacebar or the STop button 
+	in the software.  I think this is also the "Reset" button on the side of the control
+	box.  See "Input Switches, Limit Switches and STOP Inputs" on PDF page 46.
+	Which input is the "Start" button wired to?  Note that the M-Code reference starting
+	at PDF page 55 has some clues as to what the outputs are hard-wired as.
+	
+	
+12. 
+  

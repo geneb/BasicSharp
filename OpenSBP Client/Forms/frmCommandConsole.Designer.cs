@@ -40,7 +40,7 @@
             this.toolStripMenuItem6 = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
-            this.eXitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuExit = new System.Windows.Forms.ToolStripMenuItem();
             this.moveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.moveXAxisToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.moveYAxisToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -216,7 +216,7 @@
             this.toolStripMenuItem6,
             this.toolStripMenuItem7,
             this.toolStripMenuItem1,
-            this.eXitToolStripMenuItem});
+            this.menuExit});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(45, 20);
             this.fileToolStripMenuItem.Text = "[F]ile";
@@ -298,11 +298,12 @@
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
             this.toolStripMenuItem1.Size = new System.Drawing.Size(194, 6);
             // 
-            // eXitToolStripMenuItem
+            // menuExit
             // 
-            this.eXitToolStripMenuItem.Name = "eXitToolStripMenuItem";
-            this.eXitToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
-            this.eXitToolStripMenuItem.Text = "E[X]it";
+            this.menuExit.Name = "menuExit";
+            this.menuExit.Size = new System.Drawing.Size(197, 22);
+            this.menuExit.Text = "E[X]it";
+            this.menuExit.Click += new System.EventHandler(this.EXitToolStripMenuItem_Click);
             // 
             // moveToolStripMenuItem
             // 
@@ -1369,7 +1370,7 @@
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem6;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem7;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
-        private System.Windows.Forms.ToolStripMenuItem eXitToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem menuExit;
         private System.Windows.Forms.ToolStripMenuItem moveXAxisToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem moveYAxisToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem moveZAxisToolStripMenuItem;

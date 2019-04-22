@@ -32,7 +32,10 @@ namespace OpenSBP {
 
         private Marker lineMarker;
 
-        private bool exit;
+        public bool exitState;
+
+        public bool fatalError { get; set; }
+
 
         public bool StandAlone { get; set; }
 
@@ -53,6 +56,7 @@ namespace OpenSBP {
             BuiltIns.InstallAll(this);
             InitializeSystemVariables();
             InitializeOnInputDict();
+            fatalError = false;
 
         }
 
@@ -105,6 +109,7 @@ namespace OpenSBP {
                 inputEvents.Add(x, inInfo);
 
         }
+
         private void ProcessFileException(Exception ex) {
             if (ex is ArgumentNullException) {
                 Error("Path is null: " + ex.Message.ToString());
@@ -228,8 +233,6 @@ namespace OpenSBP {
 
         public void OpenUserFile(int fileNum, string fileName, string mode) {
             FileInfo workStream = new FileInfo();
-
-            fileName = @"" + fileName;
 
             // TODO need to check to see if the fileNum slot is open, if it is
             //      throw an error indicating the file # is in use.
@@ -393,7 +396,9 @@ namespace OpenSBP {
         }
 
         void Error(string text) {
-            throw new Exception(text + " at line # " + lineMarker.Line + ".");
+            Console.WriteLine(text + " at line # " + lineMarker.Line + ".");
+            fatalError = true;
+            //throw new Exception(text + " at line # " + lineMarker.Line + ".");
         }
 
         void Match(Token tok) {
@@ -402,9 +407,9 @@ namespace OpenSBP {
         }
 
         public void Exec() {
-            exit = false;
+            exitState = false;
             GetNextToken();
-            while (!exit)
+            while (!exitState)
                 Line();
         }
 
@@ -418,24 +423,40 @@ namespace OpenSBP {
             return lastToken;
         }
 
-        public void Line() {
-            while (lastToken == Token.NewLine) GetNextToken();
+        public Tuple<bool, int> Line() {
+            while (lastToken == Token.NewLine)
+                GetNextToken();
+            
+            if (fatalError) {
+                exitState = true;
+                return new Tuple<bool,int>(false, lex.TokenMarker.Line); //allows us to gracefully die.
+            }
 
             if (lastToken == Token.EOF) {
-                exit = true;
-                return;
+                exitState = true;
+                return new Tuple<bool, int>(true, lex.TokenMarker.Line);  // because we successfully executed the last line.
             }
 
             lineMarker = lex.TokenMarker;
             Statement();
-
-            if (lastToken != Token.NewLine && lastToken != Token.EOF)
+            if (fatalError) {
+                exitState = true;
+                return new Tuple<bool, int>(false, lex.TokenMarker.Line);
+            }
+            if (lastToken != Token.NewLine && lastToken != Token.EOF) {
                 Error("Expected new line got \"" + lastToken.ToString() + "\"");
+                exitState = true; 
+                return new Tuple<bool, int>(false, lex.TokenMarker.Line);
+            }
+            return new Tuple<bool, int>(true, lex.TokenMarker.Line);
         }
 
         void Statement() {
             Token keyword = lastToken;
             GetNextToken();
+            if (fatalError)
+                return;
+
             switch (keyword) {
                 case Token.Print: Print(); break;
                 case Token.Input: Input(); break;
@@ -471,7 +492,7 @@ namespace OpenSBP {
                     break;
 
                 case Token.EOF:
-                    exit = true;
+                    exitState = true;
                     break;
                 case Token.StrictOn:
                     if (!lex.StrictMode) {
@@ -486,6 +507,8 @@ namespace OpenSBP {
             }
             if (lastToken == Token.Colon) {
                 GetNextToken();
+                if (fatalError)
+                    return;
                 Statement();
             }
         }
@@ -642,6 +665,8 @@ namespace OpenSBP {
             // TODO a filename like "d:\test.txt" will throw an invalid character exception because
             //      of the single "\" character.  This needs to be handled!
             string fileName = Expr().ToString();
+
+
             string mode;
             if (lastToken != Token.For) {
                 Error("Missing 'FOR' in OPEN statement.");
@@ -982,7 +1007,7 @@ namespace OpenSBP {
 
         void End() {
             CloseAllUserFiles(); //ensures any open files get closed and their handles are disposed properly.
-            exit = true;
+            exitState = true;
         }
 
         void Let() {
@@ -1148,6 +1173,15 @@ namespace OpenSBP {
             }
 
             return prim;
+        }
+
+        private static string ToLiteral(string input) {
+            using (var writer = new StringWriter()) {
+                using (var provider = System.CodeDom.Compiler.CodeDomProvider.CreateProvider("CSharp")) {
+                    provider.GenerateCodeFromExpression(new System.CodeDom.CodePrimitiveExpression(input), writer, null);
+                    return writer.ToString();
+                }
+            }
         }
     }
 }
